@@ -1,0 +1,23 @@
+{
+  "slug": "vono-ofis",
+  "title": "Vono Ofis",
+  "year": "2021",
+  "area": "—",
+  "location": { "tr": "İstinye, İstanbul", "en": "İstinye, Istanbul" },
+  "category": { "tr": "Ofis / İç Mimarlık", "en": "Office / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Stüdyomuzun İstinye'deki kendi çalışma mekânının tasarımı ve uygulaması.",
+    "en": "The design and construction of our studio's own workspace in İstinye."
+  },
+  "body": {
+    "tr": [
+      "Vono Ofis, stüdyomuzun tasarım anlayışını gündelik çalışma ortamına taşıyan bir iç mekân projesi. Tasarımdan uygulamaya tüm süreç ekibimiz tarafından yürütüldü."
+    ],
+    "en": [
+      "Vono Office is an interior project carrying our studio's design approach into its daily working environment. The entire process, from design to construction, was carried out by our team."
+    ]
+  },
+  "cover": "/projects/vono-ofis.jpg",
+  "gallery": []
+}

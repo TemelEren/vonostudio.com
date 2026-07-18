@@ -1,0 +1,263 @@
+---
+import { useTranslations, type Locale } from '../i18n/ui';
+import about from '../../content/about.json';
+import settings from '../../content/settings.json';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const stats = settings.stats.map((s) => ({ value: s.value, label: s.label[locale] }));
+---
+
+<section class="section" id="hakkimizda">
+  <div class="container about">
+    <div class="left" data-reveal>
+      <h2 class="section-title">{t('about.title')}</h2>
+    </div>
+
+    <div class="right">
+      <figure class="team-photo" data-reveal>
+        <img src={about.photo} alt="Vono Studio" loading="lazy" />
+      </figure>
+
+      <p class="lead" data-reveal>{about.intro[locale][0]}</p>
+      {about.intro[locale].slice(1).map((p) => <p class="muted" data-reveal>{p}</p>)}
+
+      <div class="vm" data-reveal>
+        <div>
+          <h4>{t('about.vision')}</h4>
+          <p>{about.vision[locale]}</p>
+        </div>
+        <div>
+          <h4>{t('about.mission')}</h4>
+          <p>{about.mission[locale]}</p>
+        </div>
+      </div>
+
+      <div data-reveal>
+        <h4>{t('about.values')}</h4>
+        <div class="values">
+          {
+            about.values.map((v) => (
+              <div>
+                <strong>{v.title[locale]}</strong>
+                <p class="muted">{v.description[locale]}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <div data-reveal>
+        <h4>{t('about.awards')}</h4>
+        <ul class="awards">
+          {
+            about.awards.map((a) => (
+              <li>
+                <span class="year">{a.year}</span>
+                <span class="name">{a.name[locale]}</span>
+                <span class="prize">{a.prize[locale]}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div data-reveal>
+        <h4>{t('about.team')}</h4>
+        <div class="team">
+          {
+            about.team.map((m) => (
+              <div class="member">
+                <strong>{m.name}</strong>
+                <span class="role">{m.role[locale]}</span>
+                <p class="muted">{m.bio[locale]}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <dl class="stats" data-reveal>
+        {
+          stats.map((s) => (
+            <div>
+              <dt>{s.value}</dt>
+              <dd>{s.label}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  .left {
+    position: sticky;
+    top: calc(var(--nav-h) + 2rem);
+  }
+
+  .right {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+    max-width: 46rem;
+  }
+
+  .team-photo {
+    background: var(--soft);
+  }
+
+  .team-photo img {
+    width: 100%;
+    aspect-ratio: 2032 / 934;
+    object-fit: cover;
+  }
+
+  .lead {
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    line-height: 1.5;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+
+  h4 {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .vm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    border-top: 1px solid var(--line);
+    padding-top: 2rem;
+  }
+
+  .values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 2rem;
+  }
+
+  .values strong {
+    font-family: var(--font-display);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+
+  .awards {
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+
+  .awards li {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .awards .year {
+    font-family: var(--font-display);
+    font-weight: 500;
+  }
+
+  .awards .prize {
+    color: var(--muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .team {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .member strong {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+
+  .member .role {
+    display: block;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0.2rem 0 0.75rem;
+  }
+
+  .member p {
+    font-size: 0.95rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    border-top: 1px solid var(--line);
+    padding-top: 2.5rem;
+  }
+
+  .stats dt {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .stats dd {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  @media (max-width: 800px) {
+    .about {
+      grid-template-columns: 1fr;
+    }
+
+    .left {
+      position: static;
+    }
+
+    .vm,
+    .values {
+      grid-template-columns: 1fr;
+    }
+
+    .awards li {
+      grid-template-columns: 3.5rem 1fr;
+    }
+
+    .awards .prize {
+      grid-column: 2;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

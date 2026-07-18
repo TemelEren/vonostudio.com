@@ -12,19 +12,17 @@ const t = useTranslations(locale);
 <section class="section" id="referanslar">
   <div class="container">
     <div class="section-head" data-reveal>
-      <div>
-        <p class="eyebrow">{t('references.eyebrow')}</p>
-        <h2 class="section-title">{t('references.title')}</h2>
-      </div>
+      <h2 class="section-title">{t('references.title')}</h2>
     </div>
   </div>
 
   <div class="marquee" data-reveal>
-    <!-- The track is rendered twice; the animation slides one full copy,
-         so the loop is seamless. -->
+    <!-- The list is rendered four times (two per animation half): the
+         animation slides exactly half the track, so the loop is seamless
+         and the strip stays filled even with few logos. -->
     <div class="track">
       {
-        [0, 1].map((copy) => (
+        [0, 1, 2, 3].map((copy) => (
           <div class="group" aria-hidden={copy === 1 ? 'true' : undefined}>
             {references.map((ref) => (
               <img src={ref.logo} alt={copy === 0 ? ref.name : ''} loading="lazy" />

@@ -1,0 +1,23 @@
+{
+  "slug": "ceis-kent-agi",
+  "title": "Çeis Kent Ağı",
+  "year": "2019",
+  "area": "—",
+  "location": { "tr": "Beyoğlu, İstanbul", "en": "Beyoğlu, Istanbul" },
+  "category": { "tr": "Yarışma — 1. Ödül", "en": "Competition — 1st Prize" },
+  "status": { "tr": "Yarışma Projesi", "en": "Competition entry" },
+  "excerpt": {
+    "tr": "ÇEİS Kamusal Alanda Yenilikçi Adımlar Yapı Tasarım Yarışması için Beyoğlu'nda kamusal bir kent ağı önerisi.",
+    "en": "A public urban network proposal in Beyoğlu for the ÇEİS Innovative Steps in Public Space competition."
+  },
+  "body": {
+    "tr": [
+      "Kent Ağı, Beyoğlu'nun yoğun dokusunda kamusal alanları birbirine bağlayan yenilikçi bir mekânsal strateji öneriyor. Proje, ÇEİS Kamusal Alanda Yenilikçi Adımlar Yapı Tasarım Yarışması'nda birincilik ödülüne değer görülmüştür."
+    ],
+    "en": [
+      "Kent Ağı (Urban Network) proposes an innovative spatial strategy connecting public spaces within Beyoğlu's dense fabric. The project was awarded first prize in the ÇEİS Innovative Steps in Public Space Building Design Competition."
+    ]
+  },
+  "cover": "/projects/ceis-kent-agi.jpg",
+  "gallery": []
+}

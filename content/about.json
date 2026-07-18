@@ -1,0 +1,97 @@
+{
+  "photo": "/about/team.jpg",
+  "intro": {
+    "tr": [
+      "Vono Mimari Tasarım Stüdyosu, mimarlık ve tasarım alanında yenilikçi bir yaklaşımla hizmet veren bir kuruluştur. Projelerimizde, çeşitli disiplinlerle iş birliği yaparak her ölçek ve alanda yerel ihtiyaçlara özel ve sürdürülebilir çözümler sunmaktayız.",
+      "Tasarım süreçlerimizde teknolojiyi ve modern yenilikleri entegre ederek, zamansız ve sürdürülebilir çözümler üretmeye odaklanıyoruz. Mimarlık, iç mimarlık, kentsel tasarım, grafik tasarımı ve kurumsal kimlik alanlarında projeler geliştirmekte, uygulama ve inşaat süreçlerini titizlikle yürütmekteyiz. Günümüzün karmaşık sorunlarını eleştirel bir bakış açısıyla değerlendirerek, yaratıcı ve işlevsel sonuçlar elde etmekteyiz. Genç ve dinamik ekibimizle her projede yüksek kaliteyi sağlamayı hedefliyoruz.",
+      "Ulusal ve uluslararası platformlarda, mimarlık, kentsel tasarım, iç mimari ve mobilya tasarımı gibi alanlarda katıldığımız yarışmalarda birçok ödül kazanmış bulunmaktayız. Mimarlık, iç mimarlık, kentsel tasarım, grafik tasarımı ve kurumsal kimlik gibi çeşitli alanlarda projelerin tüm aşamalarında profesyonel ve çözüm odaklı bir yaklaşım sergileyerek, mükemmel sonuçlara ulaşmayı amaçlıyoruz."
+    ],
+    "en": [
+      "Vono Architectural Design Studio is a practice serving the fields of architecture and design with an innovative approach. In our projects, we collaborate across disciplines to deliver sustainable solutions tailored to local needs at every scale.",
+      "By integrating technology and modern innovation into our design processes, we focus on producing timeless and sustainable solutions. We develop projects in architecture, interior design, urban design, graphic design and brand identity, and meticulously manage construction processes. Evaluating today's complex problems with a critical eye, we achieve creative and functional results. With our young and dynamic team, we aim for the highest quality in every project.",
+      "We have won numerous awards in national and international competitions across architecture, urban design, interior architecture and furniture design. Taking a professional, solution-oriented approach at every stage of a project, we aim for excellent results in every field we work in."
+    ]
+  },
+  "vision": {
+    "tr": "Mimarlık dünyasında çığır açan, sürdürülebilir ve insan odaklı tasarımlar üretmektir.",
+    "en": "To produce groundbreaking, sustainable and human-centred designs in the world of architecture."
+  },
+  "mission": {
+    "tr": "Müşterilerimizin hayallerini gerçeğe dönüştürürken, her aşamada kaliteli hizmet ve yenilikçi çözümler sunmaktır.",
+    "en": "To turn our clients' dreams into reality while providing quality service and innovative solutions at every stage."
+  },
+  "values": [
+    {
+      "title": { "tr": "Yenilikçilik", "en": "Innovation" },
+      "description": {
+        "tr": "Her projede yaratıcı çözümler sunarak, mimarlıkta yeni ufuklar açıyoruz.",
+        "en": "We open new horizons in architecture by bringing creative solutions to every project."
+      }
+    },
+    {
+      "title": { "tr": "Kalite", "en": "Quality" },
+      "description": {
+        "tr": "En yüksek standartlarda hizmet sunarak, mükemmel sonuçlar elde ediyoruz.",
+        "en": "We achieve excellent results by delivering service at the highest standards."
+      }
+    },
+    {
+      "title": { "tr": "Müşteri Memnuniyeti", "en": "Client Satisfaction" },
+      "description": {
+        "tr": "Her adımda müşterilerimizin beklentilerini karşılamak ve aşmak için çalışıyoruz.",
+        "en": "At every step, we work to meet and exceed our clients' expectations."
+      }
+    },
+    {
+      "title": { "tr": "Sürdürülebilirlik", "en": "Sustainability" },
+      "description": {
+        "tr": "Çevre dostu ve enerji verimli tasarımlar ile geleceğe katkıda bulunuyoruz.",
+        "en": "We contribute to the future with environmentally friendly, energy-efficient designs."
+      }
+    }
+  ],
+  "awards": [
+    {
+      "year": "2019",
+      "name": {
+        "tr": "ÇEİS Kamusal Alanda Yenilikçi Adımlar Yapı Tasarım Yarışması",
+        "en": "ÇEİS \"Innovative Steps in Public Space\" Building Design Competition"
+      },
+      "prize": { "tr": "1.lik Ödülü", "en": "1st Prize" }
+    },
+    {
+      "year": "2020",
+      "name": {
+        "tr": "Taksim'i Hayal Et — Taksim Meydanı Fikir Yarışması",
+        "en": "\"Imagine Taksim\" — Taksim Square Idea Competition"
+      },
+      "prize": { "tr": "1.lik Ödülü", "en": "1st Prize" }
+    },
+    {
+      "year": "2020",
+      "name": {
+        "tr": "CEMER Nefes Alan / Aldıran Yaşam Alanları Yarışması",
+        "en": "CEMER \"Breathing / Breathtaking Living Spaces\" Competition"
+      },
+      "prize": { "tr": "Mansiyon Ödülü", "en": "Honourable Mention" }
+    }
+  ],
+  "team": [
+    {
+      "name": "Eren Temel",
+      "role": { "tr": "Kurucu Mimar", "en": "Founding Architect" },
+      "bio": {
+        "tr": "2020 yılında MEF Üniversitesi Mimarlık Bölümü'nden birincilik derecesi ile mezun olmuştur. Lisans eğitimi sürecinde, 2019 yazında ABD'nin Texas eyaletindeki UTSA Üniversitesi'nde stüdyo projeleri ve workshoplar kapsamında uluslararası bir eğitim almıştır. Erginoğlu Çalışlar, Degostudio ve Virtual Project gibi prestijli mimarlık ve oyun tasarımı ofislerinde staj yaparak çeşitli profesyonel süreçlere dair kapsamlı bir bilgi edinmiştir. 2017 yılında, MEF Üniversitesi öğretim üyeleri ve mimarlık öğrencilerinden oluşan bir ekiple \"Tasarla ve Yap Stüdyosu - DBS\" sosyal sorumluluk projesinde, \"Kolektif Üretkenlik\" temalı projede aktif rol almıştır. ÇEİS, CEMER ve KONKUR İstanbul gibi yarışmalarda çeşitli ödüller kazanmıştır. 2021 yılından beri eş kurucusu olduğu Vono Mimari Tasarım Stüdyosu aracılığıyla, kamusal, ticari, ofis ve konut projelerinin tasarım, şantiye ve uygulama aşamalarını yürütmektedir.",
+        "en": "Graduated first in his class from MEF University's Department of Architecture in 2020. During his undergraduate studies he received international training at UTSA in Texas, USA in the summer of 2019, taking part in studio projects and workshops. He interned at prestigious architecture and game design offices including Erginoğlu Çalışlar, Degostudio and Virtual Project, gaining broad insight into professional processes. In 2017 he took an active role in the \"Design & Build Studio - DBS\" social responsibility project themed \"Collective Productivity\", alongside MEF University faculty and architecture students. He has won several awards in competitions such as ÇEİS, CEMER and KONKUR Istanbul. Through Vono Architectural Design Studio, which he co-founded in 2021, he manages the design, site and construction phases of public, commercial, office and residential projects."
+      }
+    },
+    {
+      "name": "B. Ebrar Sayan",
+      "role": { "tr": "Kurucu Yüksek Mimar", "en": "Founding Architect, M.Sc." },
+      "bio": {
+        "tr": "2020 yılında MEF Üniversitesi Mimarlık Bölümü'nden yüksek onur derecesi ile mezun olmuştur. Yüksek lisans eğitimini 2024 yılında Berlin Teknik Üniversitesi'nde tamamlamıştır. Lisans eğitimi boyunca İtalya ve İstanbul'da bulunan Studio Tecnico Marani Dei, Dego Studio, KRN Mimarlık gibi farklı ofislerde stajını tamamlamıştır. Lisans eğitiminin ardından İstanbul'da SAA Mimarlık ve Peyzaj Ofisi'nde, Berlin'de Tanja Lincke Architekten'de mimar olarak görev almıştır. Eğitimi boyunca ÇEİS, CEMER ve KONKUR İstanbul gibi ulusal ve uluslararası birçok yarışmada ödül kazanmıştır.",
+        "en": "Graduated with high honours from MEF University's Department of Architecture in 2020 and completed her master's degree at TU Berlin in 2024. During her undergraduate studies she interned at offices in Italy and Istanbul including Studio Tecnico Marani Dei, Dego Studio and KRN Mimarlık. She went on to work as an architect at SAA Architecture and Landscape Office in Istanbul and at Tanja Lincke Architekten in Berlin. Throughout her education she won awards in numerous national and international competitions such as ÇEİS, CEMER and KONKUR Istanbul."
+      }
+    }
+  ]
+}

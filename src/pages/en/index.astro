@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Intro from '../../components/Intro.astro';
 import Projects from '../../components/Projects.astro';
 import Services from '../../components/Services.astro';
-import Studio from '../../components/Studio.astro';
+import About from '../../components/About.astro';
 import References from '../../components/References.astro';
 import Contact from '../../components/Contact.astro';
 import { useTranslations } from '../../i18n/ui';
@@ -16,7 +16,7 @@ const t = useTranslations(locale);
   <Intro />
   <Projects locale={locale} />
   <Services locale={locale} />
-  <Studio locale={locale} />
+  <About locale={locale} />
   <References locale={locale} />
   <Contact locale={locale} />
 </Base>

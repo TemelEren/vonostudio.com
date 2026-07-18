@@ -1,0 +1,23 @@
+{
+  "slug": "neo-vista-cafe",
+  "title": "Neo Vista Cafe",
+  "year": "2024",
+  "area": "—",
+  "location": { "tr": "İstinye, İstanbul", "en": "İstinye, Istanbul" },
+  "category": { "tr": "Kafe / İç Mimarlık", "en": "Café / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "İstinye'de bir kafenin iç mekân tasarımı ve uygulaması.",
+    "en": "The interior design and build of a café in İstinye."
+  },
+  "body": {
+    "tr": [
+      "Neo Vista Cafe, gün boyu değişen kullanım senaryolarına uyum sağlayan, davetkâr bir kafe iç mekânı olarak tasarlandı."
+    ],
+    "en": [
+      "Neo Vista Cafe was designed as an inviting café interior that adapts to changing scenarios of use throughout the day."
+    ]
+  },
+  "cover": "/projects/neo-vista-cafe.jpg",
+  "gallery": []
+}

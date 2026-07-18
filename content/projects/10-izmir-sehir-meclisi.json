@@ -1,0 +1,23 @@
+{
+  "slug": "izmir-sehir-meclisi",
+  "title": "İzmir Şehir Meclisi",
+  "year": "2021",
+  "area": "—",
+  "location": { "tr": "Alsancak, İzmir", "en": "Alsancak, Izmir" },
+  "category": { "tr": "Kamusal Yapı — Yarışma", "en": "Public Building — Competition" },
+  "status": { "tr": "Yarışma Projesi", "en": "Competition entry" },
+  "excerpt": {
+    "tr": "Alsancak'ta kentlinin katılımına açık bir şehir meclisi yapısı önerisi.",
+    "en": "A proposal for a city assembly building in Alsancak, open to public participation."
+  },
+  "body": {
+    "tr": [
+      "İzmir Şehir Meclisi, temsil mekânını kentlinin gündelik yaşamına açan şeffaf ve katılımcı bir kamusal yapı önerisi geliştiriyor."
+    ],
+    "en": [
+      "Izmir City Assembly develops a proposal for a transparent, participatory public building that opens the space of representation to the everyday life of the city."
+    ]
+  },
+  "cover": "/projects/izmir-sehir-meclisi.jpg",
+  "gallery": []
+}

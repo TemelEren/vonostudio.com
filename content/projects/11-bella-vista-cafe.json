@@ -1,0 +1,23 @@
+{
+  "slug": "bella-vista-cafe",
+  "title": "Bella Vista Cafe",
+  "year": "2023",
+  "area": "—",
+  "location": { "tr": "Balat, İstanbul", "en": "Balat, Istanbul" },
+  "category": { "tr": "Kafe / İç Mimarlık", "en": "Café / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Balat'ın tarihi dokusunda bir kafenin iç mekân tasarımı.",
+    "en": "The interior design of a café within Balat's historic fabric."
+  },
+  "body": {
+    "tr": [
+      "Bella Vista Cafe, Balat'ın tarihi sokak dokusuyla diyalog kuran, mahalle ölçeğinde samimi bir buluşma noktası olarak tasarlandı."
+    ],
+    "en": [
+      "Bella Vista Cafe was designed as an intimate neighbourhood meeting point in dialogue with Balat's historic street fabric."
+    ]
+  },
+  "cover": "/projects/bella-vista-cafe.jpg",
+  "gallery": []
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "betro-burger",
+  "title": "Betro Burger",
+  "year": "2023",
+  "area": "—",
+  "location": { "tr": "Beyoğlu, İstanbul", "en": "Beyoğlu, Istanbul" },
+  "category": { "tr": "Restoran / İç Mimarlık", "en": "Restaurant / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Beyoğlu'nda bir burger restoranının iç mekân tasarımı ve uygulaması.",
+    "en": "The interior design and build of a burger restaurant in Beyoğlu."
+  },
+  "body": {
+    "tr": [
+      "Betro Burger, markanın kimliğini mekâna taşıyan sıcak ve davetkâr bir restoran iç mekânı olarak tasarlandı. Tasarım ve uygulama süreçleri stüdyomuz tarafından yürütüldü."
+    ],
+    "en": [
+      "Betro Burger was designed as a warm, inviting restaurant interior carrying the brand's identity into space. Both design and construction were carried out by our studio."
+    ]
+  },
+  "cover": "/projects/betro-burger.jpg",
+  "gallery": []
+}

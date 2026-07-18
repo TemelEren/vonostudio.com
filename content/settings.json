@@ -1,20 +1,23 @@
 {
-  "email": "vonodesignstudio@gmail.com",
-  "phone": "+90 (5__) ___ __ __",
+  "email": "info@vonostudio.com",
+  "phone": "+90 555 035 66 55",
   "address": {
-    "tr": "İstanbul, Türkiye",
-    "en": "Istanbul, Türkiye"
+    "tr": "İstinye, Poligon Mh. Sevim Sk. 13/1, 34460 Sarıyer / İstanbul",
+    "en": "İstinye, Poligon Mh. Sevim Sk. 13/1, 34460 Sarıyer / Istanbul"
   },
   "social": [
-    { "name": "Instagram", "link": "#" },
-    { "name": "LinkedIn", "link": "#" },
-    { "name": "YouTube", "link": "#" },
-    { "name": "Pinterest", "link": "#" }
+    { "name": "Instagram", "link": "https://www.instagram.com/vonostudio/" },
+    { "name": "TikTok", "link": "https://www.tiktok.com/@vonostudio" },
+    { "name": "Facebook", "link": "https://www.facebook.com/vonostudio" },
+    { "name": "YouTube", "link": "https://www.youtube.com/@vonostudio" },
+    { "name": "LinkedIn", "link": "https://www.linkedin.com/company/vonostudio" },
+    { "name": "X", "link": "https://x.com/vonostudio" },
+    { "name": "Pinterest", "link": "https://tr.pinterest.com/vonostudio/" }
   ],
   "stats": [
-    { "value": "2019", "label": { "tr": "Kuruluş", "en": "Founded" } },
-    { "value": "40+", "label": { "tr": "Tamamlanan Proje", "en": "Completed Projects" } },
-    { "value": "12", "label": { "tr": "Ödül & Derece", "en": "Awards & Prizes" } },
+    { "value": "2021", "label": { "tr": "Kuruluş", "en": "Founded" } },
+    { "value": "12+", "label": { "tr": "Proje", "en": "Projects" } },
+    { "value": "3", "label": { "tr": "Ödül & Derece", "en": "Awards & Prizes" } },
     { "value": "5", "label": { "tr": "Disiplin", "en": "Disciplines" } }
   ]
 }

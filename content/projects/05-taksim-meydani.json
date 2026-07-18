@@ -1,0 +1,23 @@
+{
+  "slug": "taksim-meydani",
+  "title": "Taksim Meydanı ve Çevresi",
+  "year": "2020",
+  "area": "—",
+  "location": { "tr": "Taksim, İstanbul", "en": "Taksim, Istanbul" },
+  "category": { "tr": "Yarışma — 1. Ödül", "en": "Competition — 1st Prize" },
+  "status": { "tr": "Yarışma Projesi", "en": "Competition entry" },
+  "excerpt": {
+    "tr": "Taksim'i Hayal Et Fikir Yarışması'nda birincilik ödülü kazanan meydan ve çevresi önerisi.",
+    "en": "The proposal for Taksim Square and its surroundings, awarded first prize in the Imagine Taksim idea competition."
+  },
+  "body": {
+    "tr": [
+      "Öneri, Taksim Meydanı'nı ve çevresini kentlinin gündelik yaşamına yeniden kazandıran kamusal bir zemin kurgusu geliştiriyor. Proje, Taksim'i Hayal Et — Taksim Meydanı Fikir Yarışması'nda birincilik ödülüne değer görülmüştür."
+    ],
+    "en": [
+      "The proposal develops a public ground plane that reintegrates Taksim Square and its surroundings into everyday urban life. The project won first prize in the Imagine Taksim — Taksim Square Idea Competition."
+    ]
+  },
+  "cover": "/projects/taksim-meydani.jpg",
+  "gallery": []
+}

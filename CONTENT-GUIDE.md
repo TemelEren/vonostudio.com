@@ -16,6 +16,7 @@ dosyaları düzenlemeniz yeterli.
 | `content/strings.en.json` | Aynı yazıların İngilizceleri |
 | `content/settings.json` | E-posta, telefon, adres, sosyal medya linkleri, istatistikler |
 | `content/services.json` | Hizmet listesi (TR + EN bir arada) |
+| `content/about.json` | Hakkımızda: tanıtım metni, vizyon, misyon, değerler, ödüller, ekip |
 | `content/references.json` | Kayan referans logoları |
 | `content/projects/` | Her proje ayrı bir dosya |
 

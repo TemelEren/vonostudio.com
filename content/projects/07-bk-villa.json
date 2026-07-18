@@ -1,0 +1,23 @@
+{
+  "slug": "bk-villa",
+  "title": "BK Villa",
+  "year": "2022",
+  "area": "—",
+  "location": { "tr": "Zekeriyaköy, İstanbul", "en": "Zekeriyaköy, Istanbul" },
+  "category": { "tr": "Konut", "en": "Residential" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Zekeriyaköy'de bir villanın tasarım ve uygulama projesi.",
+    "en": "The design and construction of a villa in Zekeriyaköy."
+  },
+  "body": {
+    "tr": [
+      "BK Villa, Zekeriyaköy'ün yeşil dokusu içinde konumlanan, iç ve dış mekân sürekliliğini önceliklendiren bir konut projesi. Tasarımdan uygulamaya tüm aşamalar stüdyomuz tarafından yürütüldü."
+    ],
+    "en": [
+      "BK Villa is a residential project set within Zekeriyaköy's green fabric, prioritising continuity between inside and out. All phases from design to construction were managed by our studio."
+    ]
+  },
+  "cover": "/projects/bk-villa.jpg",
+  "gallery": []
+}

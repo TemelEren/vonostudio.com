@@ -64,15 +64,17 @@ const meta = [
       </div>
     </div>
 
-    <div class="container gallery">
-      {
-        project.gallery.map((src, i) => (
-          <figure data-reveal>
-            <img src={src} alt={`${project.title} — ${i + 1}`} loading="lazy" />
-          </figure>
-        ))
-      }
-    </div>
+    {
+      project.gallery.length > 0 && (
+        <div class="container gallery">
+          {project.gallery.map((src, i) => (
+            <figure data-reveal>
+              <img src={src} alt={`${project.title} — ${i + 1}`} loading="lazy" />
+            </figure>
+          ))}
+        </div>
+      )
+    }
 
     <nav class="pn container" aria-label="Projects">
       <a href={localePath(locale, `${base}/${prev.slug}`)}>

@@ -1,0 +1,23 @@
+{
+  "slug": "oc-konut",
+  "title": "ÖC Konut",
+  "year": "2024",
+  "area": "—",
+  "location": { "tr": "Nişantaşı, İstanbul", "en": "Nişantaşı, Istanbul" },
+  "category": { "tr": "Konut / İç Mimarlık", "en": "Residential / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Nişantaşı'nda bir konutun iç mekân tasarımı ve uygulaması.",
+    "en": "The interior design and build of a residence in Nişantaşı."
+  },
+  "body": {
+    "tr": [
+      "ÖC Konut, Nişantaşı'nda kent yaşamının yoğunluğuna karşı sakin bir iç dünya kuran bir konut iç mekânı projesi."
+    ],
+    "en": [
+      "ÖC Residence is a residential interior project in Nişantaşı, establishing a calm inner world against the intensity of city life."
+    ]
+  },
+  "cover": "/projects/oc-konut.jpg",
+  "gallery": []
+}

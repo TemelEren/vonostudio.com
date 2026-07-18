@@ -13,11 +13,7 @@ const projectBase = locale === 'tr' ? '/projeler' : '/projects';
 <section class="section" id="projeler">
   <div class="container">
     <div class="section-head" data-reveal>
-      <div>
-        <p class="eyebrow">{t('projects.eyebrow')}</p>
-        <h2 class="section-title">{t('projects.title')}</h2>
-      </div>
-      <span class="count">({projects.length})</span>
+      <h2 class="section-title">{t('projects.title')}</h2>
     </div>
 
     <div class="grid">
@@ -41,12 +37,6 @@ const projectBase = locale === 'tr' ? '/projeler' : '/projects';
 </section>
 
 <style>
-  .count {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    color: var(--muted);
-  }
-
   .grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);

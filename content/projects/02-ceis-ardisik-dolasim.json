@@ -1,0 +1,23 @@
+{
+  "slug": "ceis-ardisik-dolasim",
+  "title": "Çeis Ardışık Dolaşım",
+  "year": "2020",
+  "area": "—",
+  "location": { "tr": "Maçka Demokrasi Parkı, İstanbul", "en": "Maçka Democracy Park, Istanbul" },
+  "category": { "tr": "Kentsel Tasarım — Yarışma", "en": "Urban Design — Competition" },
+  "status": { "tr": "Yarışma Projesi", "en": "Competition entry" },
+  "excerpt": {
+    "tr": "Maçka Demokrasi Parkı'nda kamusal dolaşımı yeniden kurgulayan bir kentsel tasarım önerisi.",
+    "en": "An urban design proposal reimagining public circulation in Maçka Democracy Park."
+  },
+  "body": {
+    "tr": [
+      "Ardışık Dolaşım, Maçka Demokrasi Parkı'nın topografyasında kesintisiz bir kamusal deneyim kurgulayan bir dolaşım önerisi geliştiriyor. Park içindeki farklı kotlar, ardışık mekânsal duraklarla birbirine bağlanıyor."
+    ],
+    "en": [
+      "Ardışık Dolaşım (Sequential Circulation) develops a proposal for an uninterrupted public experience across the topography of Maçka Democracy Park, linking its different levels through a sequence of spatial stops."
+    ]
+  },
+  "cover": "/projects/ceis-ardisik-dolasim.jpg",
+  "gallery": []
+}

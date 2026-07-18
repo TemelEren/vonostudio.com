@@ -1,0 +1,23 @@
+{
+  "slug": "cemer-cocuk-oyun-alanlari",
+  "title": "Cemer Çocuk Oyun Alanları",
+  "year": "2020",
+  "area": "—",
+  "location": { "tr": "İzmir", "en": "Izmir" },
+  "category": { "tr": "Yarışma — Mansiyon", "en": "Competition — Honourable Mention" },
+  "status": { "tr": "Yarışma Projesi", "en": "Competition entry" },
+  "excerpt": {
+    "tr": "CEMER Nefes Alan / Aldıran Yaşam Alanları Yarışması'nda mansiyon ödülü kazanan oyun alanı tasarımı.",
+    "en": "A playground design awarded an honourable mention in the CEMER Breathing / Breathtaking Living Spaces competition."
+  },
+  "body": {
+    "tr": [
+      "Proje, çocukların oyunla kurduğu ilişkiyi mekânsal bir keşfe dönüştüren esnek oyun alanları öneriyor. CEMER Nefes Alan / Aldıran Yaşam Alanları Yarışması'nda mansiyon ödülüne değer görülmüştür."
+    ],
+    "en": [
+      "The project proposes flexible play areas that turn children's relationship with play into spatial exploration. It received an honourable mention in the CEMER Breathing / Breathtaking Living Spaces competition."
+    ]
+  },
+  "cover": "/projects/cemer-cocuk-oyun-alanlari.jpg",
+  "gallery": []
+}

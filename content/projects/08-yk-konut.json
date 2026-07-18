@@ -1,0 +1,23 @@
+{
+  "slug": "yk-konut",
+  "title": "YK Konut",
+  "year": "2023",
+  "area": "—",
+  "location": { "tr": "Kireçburnu, İstanbul", "en": "Kireçburnu, Istanbul" },
+  "category": { "tr": "Konut / İç Mimarlık", "en": "Residential / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Kireçburnu'nda bir konutun iç mekân tasarımı ve uygulaması.",
+    "en": "The interior design and build of a residence in Kireçburnu."
+  },
+  "body": {
+    "tr": [
+      "YK Konut, Boğaz'a komşu Kireçburnu'nda gündelik yaşamın gereksinimlerini sakin bir malzeme paletiyle karşılayan bir iç mekân dönüşümü."
+    ],
+    "en": [
+      "YK Residence is an interior transformation in Kireçburnu, next to the Bosphorus, meeting the needs of daily life with a calm material palette."
+    ]
+  },
+  "cover": "/projects/yk-konut.jpg",
+  "gallery": []
+}
