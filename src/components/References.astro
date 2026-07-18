@@ -1,0 +1,95 @@
+---
+import { useTranslations, type Locale } from '../i18n/ui';
+import references from '../../content/references.json';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<section class="section" id="referanslar">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <div>
+        <p class="eyebrow">{t('references.eyebrow')}</p>
+        <h2 class="section-title">{t('references.title')}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="marquee" data-reveal>
+    <!-- The track is rendered twice; the animation slides one full copy,
+         so the loop is seamless. -->
+    <div class="track">
+      {
+        [0, 1].map((copy) => (
+          <div class="group" aria-hidden={copy === 1 ? 'true' : undefined}>
+            {references.map((ref) => (
+              <img src={ref.logo} alt={copy === 0 ? ref.name : ''} loading="lazy" />
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .marquee {
+    overflow: hidden;
+    border-block: 1px solid var(--line);
+    padding-block: 2.25rem;
+    /* Fade the strip out toward both edges. */
+    mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  }
+
+  .track {
+    display: flex;
+    width: max-content;
+    animation: marquee 32s linear infinite;
+  }
+
+  .marquee:hover .track {
+    animation-play-state: paused;
+  }
+
+  .group {
+    display: flex;
+    align-items: center;
+    gap: clamp(3.5rem, 7vw, 6.5rem);
+    padding-right: clamp(3.5rem, 7vw, 6.5rem);
+  }
+
+  .group img {
+    height: 2.6rem;
+    width: auto;
+    opacity: 0.55;
+    filter: grayscale(1);
+    transition: opacity 0.3s ease, filter 0.3s ease;
+  }
+
+  .group img:hover {
+    opacity: 1;
+    filter: grayscale(0);
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track {
+      animation: none;
+      flex-wrap: wrap;
+    }
+
+    .group[aria-hidden] {
+      display: none;
+    }
+  }
+</style>

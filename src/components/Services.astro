@@ -1,0 +1,91 @@
+---
+import { services, useTranslations, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<section class="section" id="hizmetler">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <div>
+        <p class="eyebrow">{t('services.eyebrow')}</p>
+        <h2 class="section-title">{t('services.title')}</h2>
+      </div>
+    </div>
+
+    <ul class="services">
+      {
+        services.map((s, i) => (
+          <li data-reveal>
+            <span class="index">0{i + 1}</span>
+            <h3>{s.title[locale]}</h3>
+            <p>{s.desc[locale]}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .services {
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+
+  .services li {
+    display: grid;
+    grid-template-columns: 4rem 1fr minmax(0, 26rem);
+    align-items: center;
+    gap: 2rem;
+    padding: clamp(1.5rem, 3vw, 2.5rem) 1rem;
+    border-bottom: 1px solid var(--line);
+    transition: background 0.35s ease, color 0.35s ease, padding-left 0.35s ease;
+  }
+
+  .services li:hover {
+    background: var(--ink);
+    color: var(--bg);
+    padding-left: 2rem;
+  }
+
+  .index {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    transition: color 0.35s ease;
+  }
+
+  .services li:hover .index {
+    color: color-mix(in srgb, var(--bg) 60%, transparent);
+  }
+
+  .services h3 {
+    font-size: clamp(1.5rem, 3.4vw, 2.6rem);
+  }
+
+  .services p {
+    font-size: 0.92rem;
+    color: var(--muted);
+    transition: color 0.35s ease;
+  }
+
+  .services li:hover p {
+    color: color-mix(in srgb, var(--bg) 75%, transparent);
+  }
+
+  @media (max-width: 800px) {
+    .services li {
+      grid-template-columns: 2.5rem 1fr;
+    }
+
+    .services p {
+      grid-column: 2;
+    }
+  }
+</style>

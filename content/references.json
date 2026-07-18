@@ -1,0 +1,10 @@
+[
+  { "name": "Arkon", "logo": "/references/arkon.svg" },
+  { "name": "Terra Yapı", "logo": "/references/terra-yapi.svg" },
+  { "name": "Nova İnşaat", "logo": "/references/nova.svg" },
+  { "name": "Atlas Holding", "logo": "/references/atlas.svg" },
+  { "name": "Meridian", "logo": "/references/meridian.svg" },
+  { "name": "Vertex", "logo": "/references/vertex.svg" },
+  { "name": "Granit", "logo": "/references/granit.svg" },
+  { "name": "Forma", "logo": "/references/forma.svg" }
+]

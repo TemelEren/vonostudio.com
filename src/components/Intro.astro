@@ -1,0 +1,114 @@
+---
+import Logo from './Logo.astro';
+---
+
+<!-- Loading intro: the wordmark draws itself, then flies into the nav logo. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-bg"></div>
+  <div class="intro-stage">
+    <Logo class="intro-logo" />
+  </div>
+</div>
+
+<style>
+  .intro {
+    display: none;
+  }
+
+  /* Only gate the page when JS is available to run (and finish) the intro. */
+  :global(html.js) .intro {
+    display: block;
+  }
+
+  .intro-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: var(--bg);
+  }
+
+  .intro-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 201;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  const intro = document.getElementById('intro');
+  const stageLogo = intro?.querySelector<SVGSVGElement>('.intro-logo');
+  const bg = intro?.querySelector<HTMLElement>('.intro-bg');
+  const html = document.documentElement;
+
+  const cleanup = () => {
+    html.classList.remove('intro-active', 'intro-lock');
+    intro?.remove();
+  };
+
+  if (intro && stageLogo && bg) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduced) {
+      cleanup();
+    } else {
+      html.classList.add('intro-active', 'intro-lock');
+
+      // Failsafe: never leave the page stuck behind the overlay.
+      const failsafe = setTimeout(cleanup, 5000);
+
+      try {
+        const paths = [...stageLogo.querySelectorAll<SVGPathElement>('path')];
+
+        paths.forEach((path) => {
+          const len = path.getTotalLength();
+          gsap.set(path, { strokeDasharray: len, strokeDashoffset: len, strokeOpacity: 1 });
+        });
+
+        // 2 — After drawing: fly into the nav logo's exact spot while the
+        // backdrop fades away, then hand the page over.
+        const fly = () => {
+          const navLogo = document.querySelector<SVGSVGElement>('.nav-logo');
+          if (!navLogo) {
+            clearTimeout(failsafe);
+            cleanup();
+            return;
+          }
+          const from = stageLogo.getBoundingClientRect();
+          const to = navLogo.getBoundingClientRect();
+          gsap
+            .timeline({
+              delay: 0.2,
+              onComplete: () => {
+                clearTimeout(failsafe);
+                cleanup();
+              },
+            })
+            .to(stageLogo, {
+              x: to.left + to.width / 2 - (from.left + from.width / 2),
+              y: to.top + to.height / 2 - (from.top + from.height / 2),
+              scale: to.width / from.width,
+              duration: 0.85,
+              ease: 'power3.inOut',
+              transformOrigin: '50% 50%',
+            })
+            .to(bg, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.35);
+        };
+
+        // 1 — Draw the glyph contours, then fill them in.
+        gsap
+          .timeline({ defaults: { ease: 'power2.inOut' }, onComplete: fly })
+          .to(paths, { strokeDashoffset: 0, duration: 1.15, stagger: 0.12 })
+          .to(paths, { fillOpacity: 1, duration: 0.6, stagger: 0.12, ease: 'power2.out' }, '-=0.8')
+          .to(paths, { strokeOpacity: 0, duration: 0.35 }, '-=0.25');
+      } catch {
+        clearTimeout(failsafe);
+        cleanup();
+      }
+    }
+  }
+</script>

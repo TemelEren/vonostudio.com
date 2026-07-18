@@ -1,0 +1,22 @@
+---
+import Base from '../../layouts/Base.astro';
+import Intro from '../../components/Intro.astro';
+import Projects from '../../components/Projects.astro';
+import Services from '../../components/Services.astro';
+import Studio from '../../components/Studio.astro';
+import References from '../../components/References.astro';
+import Contact from '../../components/Contact.astro';
+import { useTranslations } from '../../i18n/ui';
+
+const locale = 'en' as const;
+const t = useTranslations(locale);
+---
+
+<Base locale={locale} title={t('meta.title')} description={t('meta.description')} altUrl="/">
+  <Intro />
+  <Projects locale={locale} />
+  <Services locale={locale} />
+  <Studio locale={locale} />
+  <References locale={locale} />
+  <Contact locale={locale} />
+</Base>

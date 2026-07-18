@@ -1,0 +1,142 @@
+---
+import { useTranslations, type Locale } from '../i18n/ui';
+import settings from '../../content/settings.json';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const email = settings.email;
+const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
+---
+
+<section class="section" id="iletisim">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <div>
+        <p class="eyebrow">{t('contact.eyebrow')}</p>
+        <h2 class="section-title">{t('contact.title')}</h2>
+      </div>
+    </div>
+
+    <a class="big-mail" href={`mailto:${email}`} data-reveal>
+      <span class="cta">{t('contact.cta')}</span>
+      <span class="mail">{email}</span>
+      <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M7 17 17 7M9 7h8v8" />
+      </svg>
+    </a>
+
+    <div class="cols">
+      <div data-reveal>
+        <h4>{t('contact.address.label')}</h4>
+        <p>{settings.address[locale]}</p>
+      </div>
+      <div data-reveal>
+        <h4>{t('contact.phone.label')}</h4>
+        <p>{settings.phone}</p>
+      </div>
+      <div data-reveal>
+        <h4>{t('contact.social.label')}</h4>
+        <ul>
+          {
+            socials.map((s) => (
+              <li>
+                <a href={s.href} target="_blank" rel="noopener noreferrer">
+                  {s.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .big-mail {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    padding-block: clamp(2rem, 5vw, 4rem);
+    border-block: 1px solid var(--line);
+    position: relative;
+  }
+
+  .cta {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .mail {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4.6vw, 4rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    word-break: break-all;
+    background-image: linear-gradient(var(--ink), var(--ink));
+    background-repeat: no-repeat;
+    background-size: 0% 2px;
+    background-position: left 100%;
+    transition: background-size 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .big-mail:hover .mail {
+    background-size: 100% 2px;
+  }
+
+  .arrow {
+    width: clamp(1.4rem, 3vw, 2.4rem);
+    height: auto;
+    align-self: center;
+    transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .big-mail:hover .arrow {
+    transform: translate(0.3rem, -0.3rem);
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .cols h4 {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+
+  .cols ul {
+    list-style: none;
+  }
+
+  .cols li a {
+    display: inline-block;
+    padding-block: 0.15rem;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.25s ease;
+  }
+
+  .cols li a:hover {
+    border-color: var(--ink);
+  }
+
+  @media (max-width: 700px) {
+    .cols {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

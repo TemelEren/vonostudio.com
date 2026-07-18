@@ -1,0 +1,20 @@
+{
+  "email": "vonodesignstudio@gmail.com",
+  "phone": "+90 (5__) ___ __ __",
+  "address": {
+    "tr": "İstanbul, Türkiye",
+    "en": "Istanbul, Türkiye"
+  },
+  "social": [
+    { "name": "Instagram", "link": "#" },
+    { "name": "LinkedIn", "link": "#" },
+    { "name": "YouTube", "link": "#" },
+    { "name": "Pinterest", "link": "#" }
+  ],
+  "stats": [
+    { "value": "2019", "label": { "tr": "Kuruluş", "en": "Founded" } },
+    { "value": "40+", "label": { "tr": "Tamamlanan Proje", "en": "Completed Projects" } },
+    { "value": "12", "label": { "tr": "Ödül & Derece", "en": "Awards & Prizes" } },
+    { "value": "5", "label": { "tr": "Disiplin", "en": "Disciplines" } }
+  ]
+}

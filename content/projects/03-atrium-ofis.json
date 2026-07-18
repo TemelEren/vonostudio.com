@@ -1,0 +1,25 @@
+{
+  "slug": "atrium-ofis",
+  "title": "Atrium Ofis",
+  "year": "2024",
+  "area": "1.850 m²",
+  "location": { "tr": "İstanbul, Türkiye", "en": "Istanbul, Türkiye" },
+  "category": { "tr": "Ofis / İç Mimarlık", "en": "Office / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Dört katı tek bir boşluk etrafında toplayan bir çalışma ortamı dönüşümü.",
+    "en": "A workplace transformation gathering four floors around a single void."
+  },
+  "body": {
+    "tr": [
+      "Mevcut bir ofis bloğunun içi boşaltılarak katları birbirine bağlayan bir atrium yaratıldı. Gün ışığı, merdiven ve buluşma alanları bu boşluğun çevresinde örgütleniyor.",
+      "Malzeme paleti; sıcak ahşap, açık tonlu terrazzo ve siyah metalden oluşan sakin bir denge üzerine kurulu. Akustik paneller ve esnek mobilya sistemi farklı çalışma senaryolarına izin veriyor."
+    ],
+    "en": [
+      "The interior of an existing office block was carved out to create an atrium connecting all floors. Daylight, stairs and meeting areas are organised around this void.",
+      "The material palette rests on a calm balance of warm timber, light terrazzo and black metal. Acoustic panels and a flexible furniture system support different working scenarios."
+    ]
+  },
+  "cover": "/projects/p3.svg",
+  "gallery": ["/projects/d2.svg", "/projects/d3.svg", "/projects/d1.svg"]
+}

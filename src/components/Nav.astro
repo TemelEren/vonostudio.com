@@ -1,0 +1,304 @@
+---
+import Logo from './Logo.astro';
+import { useTranslations, localePath, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  /** URL of the same page in the other locale (for the language switcher). */
+  altUrl: string;
+}
+const { locale, altUrl } = Astro.props;
+const t = useTranslations(locale);
+// The switcher shows the CURRENT language; clicking it goes to the other one.
+const langLabel = locale.toUpperCase();
+
+const links = [
+  { href: localePath(locale, '/#projeler'), label: t('nav.projects') },
+  { href: localePath(locale, '/#hizmetler'), label: t('nav.services') },
+  { href: localePath(locale, '/#studyo'), label: t('nav.studio') },
+  { href: localePath(locale, '/#iletisim'), label: t('nav.contact') },
+];
+---
+
+<header class="nav" id="site-nav">
+  <div class="nav-inner container">
+    <a class="nav-brand" href={localePath(locale, '/')} aria-label="Vono Studio">
+      <Logo class="nav-logo" />
+    </a>
+
+    <nav class="nav-links" aria-label="Site">
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
+    </nav>
+
+    <div class="nav-right">
+      <a class="nav-lang" href={altUrl}>{langLabel}</a>
+      <button class="nav-burger" id="nav-burger" aria-expanded="false" aria-controls="nav-menu">
+        <span class="burger-label">{t('nav.menu')}</span>
+        <span class="burger-icon" aria-hidden="true"><i></i><i></i></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-menu" id="nav-menu">
+    <nav aria-label="Mobile">
+      {links.map((link, i) => (
+        <a href={link.href} style={`--i:${i}`}>
+          <span class="menu-index">0{i + 1}</span>
+          {link.label}
+        </a>
+      ))}
+    </nav>
+    <a class="menu-lang" href={altUrl}>{langLabel}</a>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 100;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .nav.scrolled {
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 var(--line);
+  }
+
+  .nav-inner {
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .nav-brand {
+    color: var(--ink);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2.25rem;
+  }
+
+  .nav-links a,
+  .nav-lang {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -0.35rem;
+    width: 100%;
+    height: 1px;
+    background: var(--ink);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .nav-links a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-lang {
+    color: var(--muted);
+    transition: color 0.25s ease;
+  }
+
+  .nav-lang:hover {
+    color: var(--ink);
+  }
+
+  .nav-burger {
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .burger-icon {
+    display: grid;
+    gap: 5px;
+    width: 1.4rem;
+  }
+
+  .burger-icon i {
+    height: 1.5px;
+    background: var(--ink);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .nav-menu {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .nav-links {
+      display: none;
+    }
+
+    .nav-burger {
+      display: flex;
+    }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: var(--bg);
+      padding: calc(var(--nav-h) + 2rem) var(--pad) 3rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .nav.menu-open .nav-menu {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .nav.menu-open {
+      background: var(--bg);
+    }
+
+    .nav.menu-open .burger-icon i:first-child {
+      transform: translateY(3.25px) rotate(45deg);
+    }
+
+    .nav.menu-open .burger-icon i:last-child {
+      transform: translateY(-3.25px) rotate(-45deg);
+    }
+
+    .nav-menu nav {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .nav-menu nav a {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 9vw, 3.4rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      opacity: 0;
+      transform: translateY(1.2rem);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transition-delay: calc(var(--i) * 60ms);
+    }
+
+    .nav.menu-open .nav-menu nav a {
+      opacity: 1;
+      transform: none;
+    }
+
+    .menu-index {
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    .menu-lang {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  const nav = document.getElementById('site-nav')!;
+  const burger = document.getElementById('nav-burger')!;
+
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  burger.addEventListener('click', () => {
+    const open = nav.classList.toggle('menu-open');
+    burger.setAttribute('aria-expanded', String(open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  // Close the mobile menu when a link inside it is clicked.
+  nav.querySelectorAll('.nav-menu a').forEach((a) =>
+    a.addEventListener('click', () => {
+      nav.classList.remove('menu-open');
+      burger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    })
+  );
+
+  // Playful nav logo: glyphs follow the cursor at different depths and
+  // bounce elastically on hover. Movement values are in viewBox units
+  // (the logo is 1506 units wide, so ~24 units ≈ 1 rendered pixel).
+  const brand = nav.querySelector<HTMLAnchorElement>('.nav-brand');
+  const letters = brand ? [...brand.querySelectorAll<SVGGElement>('.logo-letter')] : [];
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (brand && letters.length && !reduced) {
+    const depths = [1, 0.6, 1.3, 0.8];
+    const xTo = letters.map((l) => gsap.quickTo(l, 'x', { duration: 0.5, ease: 'power3.out' }));
+    const yTo = letters.map((l) => gsap.quickTo(l, 'y', { duration: 0.5, ease: 'power3.out' }));
+
+    brand.addEventListener('pointermove', (e) => {
+      const r = brand.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - 0.5;
+      const ny = (e.clientY - r.top) / r.height - 0.5;
+      letters.forEach((_, i) => {
+        xTo[i](nx * 90 * depths[i]);
+        yTo[i](ny * 60 * depths[i]);
+      });
+    });
+
+    brand.addEventListener('pointerenter', () => {
+      gsap.fromTo(
+        letters,
+        { scale: 0.8 },
+        {
+          scale: 1,
+          duration: 0.9,
+          stagger: 0.06,
+          ease: 'elastic.out(1, 0.35)',
+          transformOrigin: '50% 50%',
+        }
+      );
+    });
+
+    brand.addEventListener('pointerleave', () => {
+      letters.forEach((_, i) => {
+        xTo[i](0);
+        yTo[i](0);
+      });
+    });
+  }
+</script>

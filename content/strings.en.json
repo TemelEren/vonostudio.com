@@ -1,0 +1,45 @@
+{
+  "meta.title": "Vono Studio — Architecture, Interiors, Construction",
+  "meta.description": "Vono Studio is an award-winning design practice working across architecture, interior design, urban design and construction.",
+
+  "nav.projects": "Projects",
+  "nav.services": "Services",
+  "nav.studio": "Studio",
+  "nav.contact": "Contact",
+  "nav.menu": "Menu",
+  "nav.close": "Close",
+
+  "projects.eyebrow": "01 — Selected Projects",
+  "projects.title": "Projects",
+  "projects.view": "View project",
+
+  "services.eyebrow": "02 — Services",
+  "services.title": "What we do",
+
+  "studio.eyebrow": "03 — Studio",
+  "studio.title": "Studio",
+  "studio.p1": "Vono Studio is a young, dynamic design practice working across architecture, interior design, urban design and brand identity. We manage the entire journey from concept to built environment under one roof.",
+  "studio.p2": "Awards earned in national and international competitions reflect our commitment to sustainable, context-sensitive solutions at every scale. For us, each project is a new relationship between place, people and time.",
+
+  "references.eyebrow": "04 — References",
+  "references.title": "Our references",
+
+  "contact.eyebrow": "05 — Contact",
+  "contact.title": "Have a project in mind?",
+  "contact.cta": "Let's talk",
+  "contact.address.label": "Address",
+  "contact.phone.label": "Phone",
+  "contact.email.label": "Email",
+  "contact.social.label": "Social",
+
+  "footer.rights": "All rights reserved.",
+
+  "project.back": "All projects",
+  "project.year": "Year",
+  "project.location": "Location",
+  "project.area": "Area",
+  "project.status": "Status",
+  "project.category": "Category",
+  "project.prev": "Previous project",
+  "project.next": "Next project"
+}

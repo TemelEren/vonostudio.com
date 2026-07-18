@@ -1,0 +1,25 @@
+{
+  "slug": "terra-konutlari",
+  "title": "Terra Konutları",
+  "year": "2023",
+  "area": "12.400 m²",
+  "location": { "tr": "Ankara, Türkiye", "en": "Ankara, Türkiye" },
+  "category": { "tr": "Toplu Konut", "en": "Housing" },
+  "status": { "tr": "İnşaat sürüyor", "en": "Under construction" },
+  "excerpt": {
+    "tr": "Avlulu bloklarla mahalle ölçeğini yeniden kuran bir konut yerleşkesi.",
+    "en": "A housing complex rebuilding neighbourhood scale with courtyard blocks."
+  },
+  "body": {
+    "tr": [
+      "Terra Konutları, yüksek yoğunluklu konut talebini mahalle kültürüyle uzlaştırmayı deniyor. Bloklar, yarı kamusal avlular etrafında kademelenerek insan ölçeğinde sokaklar oluşturuyor.",
+      "Zemin katlar ticaret ve ortak işlevlere ayrılırken, çatı düzlemleri ortak bahçelere dönüşüyor. Proje kapsamında uygulama ve şantiye yönetimi de stüdyomuz tarafından yürütülüyor."
+    ],
+    "en": [
+      "Terra Housing attempts to reconcile high-density housing demand with neighbourhood culture. Blocks step around semi-public courtyards, forming streets at a human scale.",
+      "Ground floors host retail and shared functions while rooftops become communal gardens. Construction and site management are also carried out by our studio."
+    ]
+  },
+  "cover": "/projects/p4.svg",
+  "gallery": ["/projects/d1.svg", "/projects/d3.svg", "/projects/d2.svg"]
+}

@@ -1,0 +1,45 @@
+{
+  "meta.title": "Vono Studio — Mimarlık, İç Mimarlık, Uygulama",
+  "meta.description": "Vono Studio; mimarlık, iç mimarlık, kentsel tasarım ve uygulama alanlarında çalışan, ulusal ve uluslararası ödüllü bir tasarım stüdyosudur.",
+
+  "nav.projects": "Projeler",
+  "nav.services": "Hizmetler",
+  "nav.studio": "Stüdyo",
+  "nav.contact": "İletişim",
+  "nav.menu": "Menü",
+  "nav.close": "Kapat",
+
+  "projects.eyebrow": "01 — Seçili Projeler",
+  "projects.title": "Projeler",
+  "projects.view": "Projeyi incele",
+
+  "services.eyebrow": "02 — Hizmetler",
+  "services.title": "Ne yapıyoruz",
+
+  "studio.eyebrow": "03 — Stüdyo",
+  "studio.title": "Stüdyo",
+  "studio.p1": "Vono Studio; mimarlık, iç mimarlık, kentsel tasarım ve kurumsal kimlik alanlarında çalışan genç ve dinamik bir tasarım stüdyosudur. Tasarımı kavramsal bir fikirden yapılı çevreye taşıyan tüm süreci tek çatı altında yönetiyoruz.",
+  "studio.p2": "Ulusal ve uluslararası yarışmalarda elde ettiğimiz ödüller, her ölçekte sürdürülebilir ve bağlamına duyarlı çözümler üretme yaklaşımımızın bir sonucu. Bizim için her proje; yer, kullanıcı ve zamanla kurulan yeni bir ilişkidir.",
+
+  "references.eyebrow": "04 — Referanslar",
+  "references.title": "Referanslarımız",
+
+  "contact.eyebrow": "05 — İletişim",
+  "contact.title": "Bir projeniz mi var?",
+  "contact.cta": "Konuşalım",
+  "contact.address.label": "Adres",
+  "contact.phone.label": "Telefon",
+  "contact.email.label": "E-posta",
+  "contact.social.label": "Sosyal",
+
+  "footer.rights": "Tüm hakları saklıdır.",
+
+  "project.back": "Tüm projeler",
+  "project.year": "Yıl",
+  "project.location": "Konum",
+  "project.area": "Alan",
+  "project.status": "Durum",
+  "project.category": "Kategori",
+  "project.prev": "Önceki proje",
+  "project.next": "Sonraki proje"
+}

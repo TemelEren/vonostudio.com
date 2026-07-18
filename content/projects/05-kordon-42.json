@@ -1,0 +1,25 @@
+{
+  "slug": "kordon-42",
+  "title": "Kordon 42",
+  "year": "2023",
+  "area": "640 m²",
+  "location": { "tr": "İzmir, Türkiye", "en": "Izmir, Türkiye" },
+  "category": { "tr": "Restoran / İç Mimarlık", "en": "Restaurant / Interiors" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Tarihi bir depo yapısının kıyıya bakan bir restorana dönüşümü.",
+    "en": "The conversion of a historic warehouse into a waterfront restaurant."
+  },
+  "body": {
+    "tr": [
+      "Kordon 42, yüzyıl başına tarihlenen bir depo yapısının özgün strüktürünü koruyarak yeme-içme işlevine dönüştürülmesini kapsıyor. Mevcut tuğla duvarlar ve çelik makaslar olduğu gibi bırakıldı.",
+      "Yeni eklenen tüm elemanlar — bar, asma kat ve servis hacimleri — mevcut yapıdan bağımsız, geri döndürülebilir müdahaleler olarak tasarlandı."
+    ],
+    "en": [
+      "Kordon 42 converts an early-20th-century warehouse into a restaurant while preserving its original structure. The existing brick walls and steel trusses were left untouched.",
+      "All new elements — the bar, mezzanine and service volumes — were designed as reversible interventions, structurally independent from the historic fabric."
+    ]
+  },
+  "cover": "/projects/p5.svg",
+  "gallery": ["/projects/d2.svg", "/projects/d1.svg", "/projects/d3.svg"]
+}

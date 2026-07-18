@@ -1,0 +1,104 @@
+---
+import { useTranslations, type Locale } from '../i18n/ui';
+import settings from '../../content/settings.json';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const stats = settings.stats.map((s) => ({ value: s.value, label: s.label[locale] }));
+---
+
+<section class="section" id="studyo">
+  <div class="container studio">
+    <div class="left" data-reveal>
+      <p class="eyebrow">{t('studio.eyebrow')}</p>
+      <h2 class="section-title">{t('studio.title')}</h2>
+    </div>
+
+    <div class="right">
+      <p class="lead" data-reveal>{t('studio.p1')}</p>
+      <p data-reveal>{t('studio.p2')}</p>
+
+      <dl class="stats">
+        {
+          stats.map((s) => (
+            <div data-reveal>
+              <dt>{s.value}</dt>
+              <dd>{s.label}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+</section>
+
+<style>
+  .studio {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  .left {
+    position: sticky;
+    top: calc(var(--nav-h) + 2rem);
+  }
+
+  .right {
+    display: grid;
+    gap: 1.75rem;
+    max-width: 44rem;
+  }
+
+  .lead {
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    line-height: 1.5;
+  }
+
+  .right p:not(.lead) {
+    color: var(--muted);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--line);
+    padding-top: 2.5rem;
+  }
+
+  .stats dt {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .stats dd {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  @media (max-width: 800px) {
+    .studio {
+      grid-template-columns: 1fr;
+    }
+
+    .left {
+      position: static;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

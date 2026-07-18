@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000">
+  <rect width="1500" height="1000" fill="#eaeae6"/>
+  <g fill="none" stroke="#161616" stroke-width="2.5">
+    <path d="M330 840 a420 420 0 0 1 840 0" stroke-opacity="0.42"/>
+    <path d="M440 840 a310 310 0 0 1 620 0" stroke-opacity="0.3"/>
+    <path d="M550 840 a200 200 0 0 1 400 0" stroke-opacity="0.2"/>
+    <line x1="200" y1="840" x2="1300" y2="840" stroke-opacity="0.45"/>
+  </g>
+</svg>

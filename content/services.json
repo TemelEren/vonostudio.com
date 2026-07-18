@@ -1,0 +1,37 @@
+[
+  {
+    "title": { "tr": "Mimarlık", "en": "Architecture" },
+    "description": {
+      "tr": "Konut, ticari ve kamusal yapılarda kavramsal tasarımdan ruhsat projesine.",
+      "en": "From concept design to permit drawings for residential, commercial and public buildings."
+    }
+  },
+  {
+    "title": { "tr": "İç Mimarlık", "en": "Interior Design" },
+    "description": {
+      "tr": "Mekânın kimliğini kuran bütüncül iç mekân tasarımı ve detay çözümleri.",
+      "en": "Holistic interior design and detailing that defines the identity of a space."
+    }
+  },
+  {
+    "title": { "tr": "Kentsel Tasarım", "en": "Urban Design" },
+    "description": {
+      "tr": "Kamusal alan, peyzaj ve kent ölçeğinde bağlama duyarlı tasarım stratejileri.",
+      "en": "Context-driven strategies for public space, landscape and the urban scale."
+    }
+  },
+  {
+    "title": { "tr": "Uygulama & İnşaat", "en": "Construction" },
+    "description": {
+      "tr": "Anahtar teslim uygulama, şantiye yönetimi ve maliyet kontrolü.",
+      "en": "Turnkey construction, site management and cost control."
+    }
+  },
+  {
+    "title": { "tr": "Kurumsal Kimlik & Grafik", "en": "Brand & Graphic Design" },
+    "description": {
+      "tr": "Markalar ve mekânlar için grafik tasarım, yönlendirme ve kimlik sistemleri.",
+      "en": "Graphic design, wayfinding and identity systems for brands and spaces."
+    }
+  }
+]

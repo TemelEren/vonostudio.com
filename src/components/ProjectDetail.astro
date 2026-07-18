@@ -1,0 +1,229 @@
+---
+import Base from '../layouts/Base.astro';
+import { projects, type Project } from '../data/projects';
+import { useTranslations, localePath, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  project: Project;
+}
+const { locale, project } = Astro.props;
+const t = useTranslations(locale);
+
+const index = projects.findIndex((p) => p.slug === project.slug);
+const prev = projects[(index - 1 + projects.length) % projects.length];
+const next = projects[(index + 1) % projects.length];
+
+const base = locale === 'tr' ? '/projeler' : '/projects';
+const altBase = locale === 'tr' ? '/projects' : '/projeler';
+const altUrl = localePath(locale === 'tr' ? 'en' : 'tr', `${altBase}/${project.slug}`);
+
+const meta = [
+  { label: t('project.year'), value: project.year },
+  { label: t('project.location'), value: project.location[locale] },
+  { label: t('project.area'), value: project.area },
+  { label: t('project.status'), value: project.status[locale] },
+  { label: t('project.category'), value: project.category[locale] },
+];
+---
+
+<Base
+  locale={locale}
+  title={`${project.title} — Vono Studio`}
+  description={project.excerpt[locale]}
+  altUrl={altUrl}
+>
+  <article class="detail">
+    <div class="container">
+      <a class="back" href={localePath(locale, '/#projeler')}>← {t('project.back')}</a>
+
+      <header data-reveal>
+        <h1>{project.title}</h1>
+        <p class="excerpt">{project.excerpt[locale]}</p>
+      </header>
+
+      <dl class="meta" data-reveal>
+        {
+          meta.map((m) => (
+            <div>
+              <dt>{m.label}</dt>
+              <dd>{m.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+
+    <figure class="cover" data-reveal>
+      <img src={project.cover} alt={project.title} />
+    </figure>
+
+    <div class="container body-grid">
+      <div class="body" data-reveal>
+        {project.body[locale].map((p) => <p>{p}</p>)}
+      </div>
+    </div>
+
+    <div class="container gallery">
+      {
+        project.gallery.map((src, i) => (
+          <figure data-reveal>
+            <img src={src} alt={`${project.title} — ${i + 1}`} loading="lazy" />
+          </figure>
+        ))
+      }
+    </div>
+
+    <nav class="pn container" aria-label="Projects">
+      <a href={localePath(locale, `${base}/${prev.slug}`)}>
+        <span>← {t('project.prev')}</span>
+        <strong>{prev.title}</strong>
+      </a>
+      <a class="next" href={localePath(locale, `${base}/${next.slug}`)}>
+        <span>{t('project.next')} →</span>
+        <strong>{next.title}</strong>
+      </a>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .detail {
+    padding-top: calc(var(--nav-h) + clamp(2rem, 6vw, 5rem));
+  }
+
+  .back {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+    transition: color 0.25s ease;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 7vw, 5.5rem);
+  }
+
+  .excerpt {
+    max-width: 38rem;
+    margin-top: 1.25rem;
+    font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+    color: var(--muted);
+  }
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.5rem;
+    border-top: 1px solid var(--line);
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: 1.5rem;
+  }
+
+  .meta dt {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .meta dd {
+    margin-top: 0.35rem;
+    font-family: var(--font-display);
+    font-weight: 500;
+  }
+
+  .cover {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    background: var(--soft);
+  }
+
+  .cover img {
+    width: 100%;
+    max-height: 82svh;
+    object-fit: cover;
+  }
+
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 44rem) 1fr;
+    padding-block: clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .body {
+    grid-column: 2;
+    display: grid;
+    gap: 1.5rem;
+    font-size: 1.05rem;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  .gallery figure {
+    background: var(--soft);
+    overflow: hidden;
+  }
+
+  .gallery figure:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: 3 / 2;
+  }
+
+  .pn {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-block: clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .pn a {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .pn a span {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .pn a strong {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2.6vw, 1.9rem);
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.25s ease;
+  }
+
+  .pn a:hover strong {
+    border-color: var(--ink);
+  }
+
+  .pn .next {
+    text-align: right;
+  }
+
+  @media (max-width: 800px) {
+    .meta {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

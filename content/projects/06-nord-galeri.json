@@ -1,0 +1,25 @@
+{
+  "slug": "nord-galeri",
+  "title": "Nord Galeri",
+  "year": "2022",
+  "area": "380 m²",
+  "location": { "tr": "Berlin, Almanya", "en": "Berlin, Germany" },
+  "category": { "tr": "Kültür / Sergi", "en": "Culture / Exhibition" },
+  "status": { "tr": "Tamamlandı", "en": "Completed" },
+  "excerpt": {
+    "tr": "Esnek sergileme senaryolarına izin veren nötr ama karakterli bir galeri mekânı.",
+    "en": "A neutral yet characterful gallery allowing flexible exhibition scenarios."
+  },
+  "body": {
+    "tr": [
+      "Nord Galeri, sanat eserinin önüne geçmeyen ama mekânsal bir karakter taşıyan bir sergi ortamı arayışının ürünü. Hareketli duvar panelleri, mekânın her sergide yeniden kurgulanmasına izin veriyor.",
+      "Doğal ışık, kuzeye bakan çatı ışıklıklarıyla filtrelenerek sergi alanına alınıyor. Proje, stüdyomuzun uluslararası alandaki ilk uygulamalarından biri."
+    ],
+    "en": [
+      "Nord Gallery grew from the search for an exhibition environment that never overshadows the artwork yet carries spatial character. Movable wall panels allow the space to be reconfigured for every show.",
+      "Daylight is filtered into the exhibition space through north-facing skylights. The project is one of our studio's first built works abroad."
+    ]
+  },
+  "cover": "/projects/p6.svg",
+  "gallery": ["/projects/d3.svg", "/projects/d2.svg", "/projects/d1.svg"]
+}

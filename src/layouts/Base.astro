@@ -1,0 +1,64 @@
+---
+import '@fontsource-variable/space-grotesk';
+import '@fontsource-variable/inter';
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import type { Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** URL of the same page in the other locale. */
+  altUrl: string;
+}
+const { locale, title, description, altUrl } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const altLocale = locale === 'tr' ? 'en' : 'tr';
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang={altLocale} href={new URL(altUrl, Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      // Marks JS availability so animation-ready elements can start hidden.
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+  <body>
+    <Nav locale={locale} altUrl={altUrl} />
+    <main>
+      <slot />
+    </main>
+    <Footer locale={locale} />
+
+    <script>
+      const items = document.querySelectorAll('[data-reveal]');
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+              observer.unobserve(entry.target);
+            }
+          }
+        },
+        { rootMargin: '0px 0px -8% 0px' }
+      );
+      items.forEach((el) => observer.observe(el));
+    </script>
+  </body>
+</html>
