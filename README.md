@@ -45,16 +45,48 @@ cp .env.example .env         # SITE_URL / PORT / BIND_ADDRESS
 docker compose up -d --build
 ```
 
-Bu kadar. İlk açılışta veritabanı volume'u boşsa konteyner `seed/` verisinden
-`content.db` dosyasını kendisi oluşturur; sonraki açılışlarda dokunmaz.
+Bu kadar. Veritabanı klasörü boşsa konteyner `seed/` verisinden `content.db`
+dosyasını kendisi oluşturur; dosya zaten varsa ona hiç dokunmaz.
 
 - Sunucu konteyner içinde **8081** portunu dinler ve dışarıya varsayılan olarak
   **sadece 127.0.0.1** üzerinden açılır — dış dünyaya HAProxy açar. HAProxy
   başka bir makinedeyse `.env` içinde `BIND_ADDRESS=0.0.0.0` yapın.
-- İçerik veritabanı `content` adlı volume'da, konteyner içinde
-  `/data/content.db`. Düzenleme arayüzü de aynı volume'u bağlayarak yazar.
-- Dosyayı sunucuda düz bir klasörde tutmak isterseniz `compose.yaml` içindeki
-  bind mount satırı hazır ve yorumlu duruyor.
+- İçerik veritabanı `docker-compose/data/content.db` dosyasıdır; konteyner
+  içinde `/data/content.db` olarak görünür.
+
+### Veritabanı dosyasının yeri
+
+Elinizdeki `content.db` dosyasını `docker-compose/data/` klasörüne koyun:
+
+```bash
+cd docker-compose
+mkdir -p data && mv content.db data/
+docker compose up -d
+```
+
+Klasör dolu olduğu için konteyner seed çalıştırmaz, doğrudan bu dosyayı kullanır.
+Başka bir yerde tutmak isterseniz `.env` içinde `DB_DIR=/var/lib/vono` gibi bir
+yol verin.
+
+**Neden tek dosya değil de klasör mount ediliyor?** SQLite çalışırken veritabanının
+yanında `content.db-wal` ve `content.db-shm` dosyaları açar; ayrıca düzenleme
+arayüzü dosyayı yerinden değiştirebilir (yeni dosya yazıp üzerine taşımak yaygın
+bir yöntemdir). Tek dosya mount edilirse yan dosyalar konteynerin içinde kalır ve
+dosya değiştirildiğinde konteyner eski dosyaya bakmaya devam eder — ikisi de
+sessizce yanlış davranışa yol açar. Klasör mount edildiğinde ikisi de doğru çalışır.
+
+**İzinler.** Konteyner `RUN_AS` (varsayılan `1000:1000`) kullanıcısıyla çalışır;
+`DB_DIR` klasörünün ve içindeki dosyanın bu kullanıcıya ait olması gerekir:
+
+```bash
+sudo chown -R 1000:1000 data       # ya da .env içinde RUN_AS=$(id -u):$(id -g)
+```
+
+Site veritabanına sadece okuma yapar, ama klasörün yazılabilir olması gerekir:
+WAL modundaki bir veritabanını okumak için SQLite yanına `-shm` dosyası açar.
+
+Düzenleme arayüzü ayrı bir konteynerse aynı klasörü ona da bağlayın — iki
+konteyner aynı dosyayı paylaşır, site değişikliği ilk istekte görür.
 
 Günlük işler:
 
@@ -65,10 +97,10 @@ docker compose restart              # sadece yeniden başlat
 docker compose exec web node scripts/seed.mjs   # içeriği seed'e döndür (üzerine yazar)
 ```
 
-Veritabanını yedeklemek / dışarı almak:
+Veritabanı doğrudan sunucuda durduğu için yedeklemek dosyayı kopyalamaktır:
 
 ```bash
-docker compose cp web:/data/content.db ./content.db
+sqlite3 data/content.db ".backup data/content-$(date +%F).db"
 ```
 
 **Not:** `SITE_URL` derleme zamanında gömülür, çalışma anında değil. Alan adı

@@ -24,19 +24,19 @@ services:
     environment:
       CONTENT_DB: /data/content.db
 
+    # Konteynerin çalıştığı kullanıcı. Bind mount edilen klasörün sahibiyle
+    # aynı olmalı; `id -u`:`id -g` çıktısını .env içine yazabilirsiniz.
+    user: "${RUN_AS:-1000:1000}"
+
     volumes:
-      # İçerik veritabanı. Düzenleme arayüzü de bu volume'u bağlayarak yazar.
-      - content:/data
-      # Dosyayı sunucuda düz bir klasörde tutmayı tercih ederseniz üsttekini
-      # kapatıp bunu açın; klasörün konteynerdeki 'node' kullanıcısına ait
-      # olması gerekir:  mkdir -p data && sudo chown 1000:1000 data
-      # - ./data:/data
+      # İçerik veritabanının durduğu KLASÖR — tek dosya değil. SQLite yanına
+      # -wal ve -shm dosyaları açar ve düzenleme arayüzü dosyayı yerinden
+      # değiştirebilir; ikisi de ancak klasör mount edilirse doğru çalışır.
+      # Düzenleme arayüzü de aynı klasörü bağlayarak yazar.
+      - ${DB_DIR:-./data}:/data
 
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  content:

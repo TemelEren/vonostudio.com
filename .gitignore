@@ -10,4 +10,5 @@ content.db-shm
 
 # Per-server Docker settings and the bind-mounted database
 docker-compose/.env
-docker-compose/data/
+docker-compose/data/*
+!docker-compose/data/.gitkeep
