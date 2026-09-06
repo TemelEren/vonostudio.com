@@ -6,13 +6,20 @@ import Services from '../../components/Services.astro';
 import About from '../../components/About.astro';
 import References from '../../components/References.astro';
 import Contact from '../../components/Contact.astro';
-import { useTranslations } from '../../i18n/ui';
+import { useTranslations, localePath } from '../../i18n/ui';
+import { homeSchema } from '../../seo/pages';
 
 const locale = 'en' as const;
 const t = useTranslations(locale);
 ---
 
-<Base locale={locale} title={t('meta.title')} description={t('meta.description')} altUrl="/">
+<Base
+  locale={locale}
+  title={t('meta.title')}
+  description={t('meta.description')}
+  altUrl={localePath('tr', '/')}
+  schema={homeSchema(Astro.site!, locale)}
+>
   <Intro />
   <Projects locale={locale} />
   <Services locale={locale} />

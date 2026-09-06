@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { projects, type Project } from '../data/projects';
 import { useTranslations, localePath, type Locale } from '../i18n/ui';
+import { projectPath, projectSchema } from '../seo/pages';
 
 interface Props {
   locale: Locale;
@@ -14,9 +15,7 @@ const index = projects.findIndex((p) => p.slug === project.slug);
 const prev = projects[(index - 1 + projects.length) % projects.length];
 const next = projects[(index + 1) % projects.length];
 
-const base = locale === 'tr' ? '/projeler' : '/projects';
-const altBase = locale === 'tr' ? '/projects' : '/projeler';
-const altUrl = localePath(locale === 'tr' ? 'en' : 'tr', `${altBase}/${project.slug}`);
+const altUrl = projectPath(locale === 'tr' ? 'en' : 'tr', project.slug);
 
 const meta = [
   { label: t('project.year'), value: project.year },
@@ -32,6 +31,9 @@ const meta = [
   title={`${project.title} — Vono Studio`}
   description={project.excerpt[locale]}
   altUrl={altUrl}
+  image={project.cover}
+  type="article"
+  schema={projectSchema(Astro.site!, locale, project)}
 >
   <article class="detail">
     <div class="container">
@@ -55,7 +57,7 @@ const meta = [
     </div>
 
     <figure class="cover" data-reveal>
-      <img src={project.cover} alt={project.title} />
+      <img src={project.cover} alt={project.title} fetchpriority="high" decoding="async" />
     </figure>
 
     <div class="container body-grid">
@@ -69,7 +71,7 @@ const meta = [
         <div class="container gallery">
           {project.gallery.map((src, i) => (
             <figure data-reveal>
-              <img src={src} alt={`${project.title} — ${i + 1}`} loading="lazy" />
+              <img src={src} alt={`${project.title} — ${i + 1}`} loading="lazy" decoding="async" />
             </figure>
           ))}
         </div>
@@ -77,11 +79,11 @@ const meta = [
     }
 
     <nav class="pn container" aria-label="Projects">
-      <a href={localePath(locale, `${base}/${prev.slug}`)}>
+      <a href={projectPath(locale, prev.slug)} rel="prev">
         <span>← {t('project.prev')}</span>
         <strong>{prev.title}</strong>
       </a>
-      <a class="next" href={localePath(locale, `${base}/${next.slug}`)}>
+      <a class="next" href={projectPath(locale, next.slug)} rel="next">
         <span>{t('project.next')} →</span>
         <strong>{next.title}</strong>
       </a>

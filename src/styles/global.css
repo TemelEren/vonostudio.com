@@ -162,3 +162,22 @@ button {
 main > .section:first-child {
   padding-top: calc(var(--nav-h) + clamp(2.5rem, 6vw, 5rem));
 }
+
+/* Keyboard users get a way past the fixed nav straight into the content. */
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 300;
+  transform: translate(-50%, -110%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0.6rem 1.1rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translate(-50%, 0);
+}

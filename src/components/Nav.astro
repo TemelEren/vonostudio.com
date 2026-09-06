@@ -249,14 +249,18 @@ const links = [
     document.body.style.overflow = open ? 'hidden' : '';
   });
 
+  const closeMenu = () => {
+    nav.classList.remove('menu-open');
+    burger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && nav.classList.contains('menu-open')) closeMenu();
+  });
+
   // Close the mobile menu when a link inside it is clicked.
-  nav.querySelectorAll('.nav-menu a').forEach((a) =>
-    a.addEventListener('click', () => {
-      nav.classList.remove('menu-open');
-      burger.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
-    })
-  );
+  nav.querySelectorAll('.nav-menu a').forEach((a) => a.addEventListener('click', closeMenu));
 
   // Playful nav logo: glyphs follow the cursor at different depths and
   // bounce elastically on hover. Movement values are in viewBox units

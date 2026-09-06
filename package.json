@@ -6,17 +6,21 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "check": "astro check"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
     "@fontsource-variable/inter": "^5.2.5",
     "@fontsource-variable/space-grotesk": "^5.2.5",
     "astro": "^5.12.0",
     "gsap": "^3.13.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "opentype.js": "^2.0.0",
     "puppeteer-core": "^25.3.0",
-    "svg-path-bbox": "^2.1.0"
+    "svg-path-bbox": "^2.1.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -20,7 +20,7 @@ const stats = settings.stats.map((s) => ({ value: s.value, label: s.label[locale
 
     <div class="right">
       <figure class="team-photo" data-reveal>
-        <img src={about.photo} alt="Vono Studio" loading="lazy" />
+        <img src={about.photo} alt={t('about.photo.alt')} loading="lazy" decoding="async" />
       </figure>
 
       <p class="lead" data-reveal>{about.intro[locale][0]}</p>

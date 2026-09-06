@@ -1,0 +1,84 @@
+---
+import Base from '../layouts/Base.astro';
+import { useTranslations, localePath } from '../i18n/ui';
+
+// The server serves this file for every unknown path on the domain (see the
+// nginx note in README.md), so it carries both languages rather than living
+// under a single locale.
+const locale = 'tr' as const;
+const t = useTranslations(locale);
+const en = useTranslations('en');
+---
+
+<Base
+  locale={locale}
+  title={`404 — ${t('notfound.title')} | Vono Studio`}
+  description={t('notfound.description')}
+  altUrl={localePath('en', '/')}
+  noindex
+>
+  <section class="section nf">
+    <div class="container">
+      <p class="code">404</p>
+      <h1>{t('notfound.title')}</h1>
+      <p class="lead">{t('notfound.description')}</p>
+      <p class="lead en" lang="en">{en('notfound.description')}</p>
+      <div class="links">
+        <a href={localePath('tr', '/')}>{t('notfound.home')} →</a>
+        <a href={localePath('en', '/')} lang="en">{en('notfound.home')} →</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    min-height: 70svh;
+    display: grid;
+    align-content: center;
+  }
+
+  .code {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 7vw, 5.5rem);
+  }
+
+  .lead {
+    max-width: 34rem;
+    margin-top: 1.25rem;
+    color: var(--muted);
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+  }
+
+  .en {
+    margin-top: 0.35rem;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+    margin-top: clamp(2rem, 4vw, 3rem);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .links a {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.3rem;
+    transition: border-color 0.25s ease;
+  }
+
+  .links a:hover {
+    border-color: var(--ink);
+  }
+</style>

@@ -14,7 +14,7 @@ dosyaları düzenlemeniz yeterli.
 |---|---|
 | `content/strings.tr.json` | Sitedeki tüm Türkçe yazılar (menü, başlıklar, stüdyo metni...) |
 | `content/strings.en.json` | Aynı yazıların İngilizceleri |
-| `content/settings.json` | E-posta, telefon, adres, sosyal medya linkleri, istatistikler |
+| `content/settings.json` | E-posta, telefon, adres, sosyal medya linkleri, istatistikler, arama motoru (SEO) bilgileri |
 | `content/services.json` | Hizmet listesi (TR + EN bir arada) |
 | `content/about.json` | Hakkımızda: tanıtım metni, vizyon, misyon, değerler, ödüller, ekip |
 | `content/references.json` | Kayan referans logoları |
@@ -75,10 +75,42 @@ dosya adındaki numarayı değiştirin.
    ```
 Silmek için satırı silin; sıralamayı satırların sırası belirler.
 
+## Google'da nasıl göründüğü (SEO)
+
+Sitenin arama motorlarına ve sosyal medyaya verdiği bilgiler otomatik üretilir;
+elle uğraşmanız gerekmez. Yeni bir proje eklediğinizde site haritası
+(`sitemap-index.xml`), Google için hazırlanan işletme/proje bilgileri ve link
+paylaşım kartları kendiliğinden güncellenir.
+
+Elinizde olan üç şey var:
+
+1. **Sayfa başlığı ve açıklaması.** `content/strings.tr.json` (ve `.en.json`)
+   içindeki `"meta.title"` ve `"meta.description"` satırları Google sonuçlarında
+   görünen yazılardır. Başlığı ~60, açıklamayı ~155 karakterin altında tutun.
+   Proje sayfalarında bu iş için projenin `"title"` ve `"excerpt"` alanları
+   kullanılır — yani her projeye iyi bir `excerpt` yazmak doğrudan SEO'ya yarar.
+
+2. **Link paylaşım görseli.** WhatsApp, Instagram ya da LinkedIn'de site linkini
+   paylaştığınızda çıkan kapak fotoğrafı. `content/settings.json` içinde:
+   `"seo": { "ogImage": "/about/team.jpg" }`. İsterseniz 1200x630 piksel bir
+   görsel hazırlayıp `public/` klasörüne `og.jpg` adıyla koyup burayı
+   `"/og.jpg"` yapın. (Proje sayfaları kendi kapak fotoğrafını kullanır.)
+
+3. **İşletme bilgileri.** Yine `content/settings.json` içindeki `"seo"` bloğu:
+   ilçe, il, posta kodu, ülke. Bunlar Google'ın işletme kartında kullanılır —
+   adres değişirse hem `"address"` hem bu alanları güncelleyin. Sosyal medya
+   linkleri de (`"social"`) Google'a "bu hesaplar bu firmaya ait" diye bildirilir,
+   o yüzden listeyi güncel tutmak önemlidir.
+
+> Site yayına alındıktan sonra tek seferlik yapılacak iş:
+> [Google Search Console](https://search.google.com/search-console)'a
+> `vonostudio.com` adresini ekleyip `https://vonostudio.com/sitemap-index.xml`
+> site haritasını göndermek.
+
 ## Değişiklikleri görmek
 
-- Site internete bağlandıktan sonra (Vercel/Cloudflare): değişikliği kaydedip
-  yayınladığınızda site birkaç dakika içinde kendini günceller.
+- Değişikliği kaydedip siteyi yeniden yayınlattığınızda (bkz. README.md) site
+  birkaç dakika içinde güncellenir.
 - Bilgisayarda önizleme için: proje klasöründe `npm run dev` komutunu çalıştırıp
   tarayıcıda `http://localhost:4321` adresini açın. Dosyayı her kaydettiğinizde
   sayfa kendiliğinden yenilenir.

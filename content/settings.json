@@ -1,23 +1,83 @@
 {
+  "siteName": "Vono Studio",
+  "legalName": "Vono Design Studio Mimarlık İnşaat",
+  "founded": "2021",
   "email": "info@vonostudio.com",
   "phone": "+90 555 035 66 55",
   "address": {
     "tr": "İstinye, Poligon Mh. Sevim Sk. 13/1, 34460 Sarıyer / İstanbul",
     "en": "İstinye, Poligon Mh. Sevim Sk. 13/1, 34460 Sarıyer / Istanbul"
   },
+  "seo": {
+    "ogImage": "/about/team.jpg",
+    "addressLocality": "Sarıyer",
+    "addressRegion": "İstanbul",
+    "postalCode": "34460",
+    "addressCountry": "TR",
+    "priceRange": "$$$",
+    "areaServed": {
+      "tr": "Türkiye",
+      "en": "Turkey"
+    }
+  },
   "social": [
-    { "name": "Instagram", "link": "https://www.instagram.com/vonostudio/" },
-    { "name": "TikTok", "link": "https://www.tiktok.com/@vonostudio" },
-    { "name": "Facebook", "link": "https://www.facebook.com/vonostudio" },
-    { "name": "YouTube", "link": "https://www.youtube.com/@vonostudio" },
-    { "name": "LinkedIn", "link": "https://www.linkedin.com/company/vonostudio" },
-    { "name": "X", "link": "https://x.com/vonostudio" },
-    { "name": "Pinterest", "link": "https://tr.pinterest.com/vonostudio/" }
+    {
+      "name": "Instagram",
+      "link": "https://www.instagram.com/vonostudio/"
+    },
+    {
+      "name": "TikTok",
+      "link": "https://www.tiktok.com/@vonostudio"
+    },
+    {
+      "name": "Facebook",
+      "link": "https://www.facebook.com/vonostudio"
+    },
+    {
+      "name": "YouTube",
+      "link": "https://www.youtube.com/@vonostudio"
+    },
+    {
+      "name": "LinkedIn",
+      "link": "https://www.linkedin.com/company/vonostudio"
+    },
+    {
+      "name": "X",
+      "link": "https://x.com/vonostudio"
+    },
+    {
+      "name": "Pinterest",
+      "link": "https://tr.pinterest.com/vonostudio/"
+    }
   ],
   "stats": [
-    { "value": "2021", "label": { "tr": "Kuruluş", "en": "Founded" } },
-    { "value": "12+", "label": { "tr": "Proje", "en": "Projects" } },
-    { "value": "3", "label": { "tr": "Ödül & Derece", "en": "Awards & Prizes" } },
-    { "value": "5", "label": { "tr": "Disiplin", "en": "Disciplines" } }
+    {
+      "value": "2021",
+      "label": {
+        "tr": "Kuruluş",
+        "en": "Founded"
+      }
+    },
+    {
+      "value": "12+",
+      "label": {
+        "tr": "Proje",
+        "en": "Projects"
+      }
+    },
+    {
+      "value": "3",
+      "label": {
+        "tr": "Ödül & Derece",
+        "en": "Awards & Prizes"
+      }
+    },
+    {
+      "value": "5",
+      "label": {
+        "tr": "Disiplin",
+        "en": "Disciplines"
+      }
+    }
   ]
 }

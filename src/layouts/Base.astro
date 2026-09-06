@@ -4,7 +4,10 @@ import '@fontsource-variable/inter';
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import type { Locale } from '../i18n/ui';
+import settings from '../../content/settings.json';
+import { withBase, type Locale } from '../i18n/ui';
+import { graph } from '../seo/schema';
+import { isProductionSite } from '../seo/site';
 
 interface Props {
   locale: Locale;
@@ -12,35 +15,91 @@ interface Props {
   description: string;
   /** URL of the same page in the other locale. */
   altUrl: string;
+  /** Social share image, root-relative. Defaults to settings.seo.ogImage. */
+  image?: string;
+  /** og:type — 'article' for project pages. */
+  type?: 'website' | 'article';
+  /** Extra schema.org nodes this page contributes to the JSON-LD @graph. */
+  schema?: unknown[];
+  /** Keep this page out of search results (used by 404). */
+  noindex?: boolean;
 }
-const { locale, title, description, altUrl } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const altLocale = locale === 'tr' ? 'en' : 'tr';
+const {
+  locale,
+  title,
+  description,
+  altUrl,
+  image = settings.seo.ogImage,
+  type = 'website',
+  schema = [],
+  noindex = false,
+} = Astro.props;
+
+const site = Astro.site!;
+// Preview domains are never indexed, whatever the page asks for.
+const blockIndexing = noindex || !isProductionSite(site);
+const canonical = new URL(Astro.url.pathname, site);
+const altLocale: Locale = locale === 'tr' ? 'en' : 'tr';
+const altHref = new URL(altUrl, site);
+const ogImage = new URL(image, site);
+// The Turkish pages are the default locale, so they double as x-default.
+const defaultHref = locale === 'tr' ? canonical : altHref;
+const jsonLd = graph(site, locale, schema);
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale === 'tr' ? 'tr-TR' : 'en-US'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {blockIndexing && <meta name="robots" content="noindex, follow" />}
+    {
+      !blockIndexing && (
+        <meta
+          name="robots"
+          content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+        />
+      )
+    }
+
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang={altLocale} href={new URL(altUrl, Astro.site)} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" hreflang={locale} href={canonical} />
+    <link rel="alternate" hreflang={altLocale} href={altHref} />
+    <link rel="alternate" hreflang="x-default" href={defaultHref} />
+
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <link rel="sitemap" type="application/xml" href={withBase('/sitemap-index.xml')} />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)" />
+
+    <meta property="og:site_name" content={settings.siteName} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={type} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:locale" content={locale === 'tr' ? 'tr_TR' : 'en_US'} />
+    <meta property="og:locale:alternate" content={altLocale === 'tr' ? 'tr_TR' : 'en_US'} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
     <meta name="generator" content={Astro.generator} />
+    <script type="application/ld+json" is:inline set:html={jsonLd} />
     <script is:inline>
       // Marks JS availability so animation-ready elements can start hidden.
       document.documentElement.classList.add('js');
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#main">{locale === 'tr' ? 'İçeriğe geç' : 'Skip to content'}</a>
     <Nav locale={locale} altUrl={altUrl} />
-    <main>
+    <main id="main">
       <slot />
     </main>
     <Footer locale={locale} />
