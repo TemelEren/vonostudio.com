@@ -2,9 +2,11 @@
 import Base from '../layouts/Base.astro';
 import { useTranslations, localePath } from '../i18n/ui';
 
-// The server serves this file for every unknown path on the domain (see the
-// nginx note in README.md), so it carries both languages rather than living
-// under a single locale.
+// Rendered for every unknown path on the domain — including project slugs
+// that are no longer in the database — so it carries both languages rather
+// than living under a single locale.
+Astro.response.status = 404;
+
 const locale = 'tr' as const;
 const t = useTranslations(locale);
 const en = useTranslations('en');

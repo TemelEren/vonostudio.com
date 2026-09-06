@@ -1,0 +1,10 @@
+.git
+.github
+.astro
+node_modules
+dist
+docker-compose/data
+content.db
+content.db-wal
+content.db-shm
+*.log

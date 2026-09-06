@@ -1,17 +1,18 @@
-// All editable copy lives in /content — see CONTENT-GUIDE.md.
-import tr from '../../content/strings.tr.json';
-import en from '../../content/strings.en.json';
-import servicesData from '../../content/services.json';
+// All editable copy lives in the content database — see DATA-MODEL.md.
+import { loadServices, loadStrings } from '../db';
+import type { Locale } from './locale';
+// Type-only: the seed file defines which keys exist, so a typo in t('...')
+// is still a build error even though the strings now come from SQLite.
+import type trSeed from '../../seed/content/strings.tr.json';
 
-export type Locale = 'tr' | 'en';
+export type { Locale };
 
-export const ui = { tr, en };
-
-export type UIKey = keyof typeof tr;
+export type UIKey = keyof typeof trSeed;
 
 export function useTranslations(locale: Locale) {
+  const strings = loadStrings(locale);
   return function t(key: UIKey): string {
-    return (ui[locale] as Record<UIKey, string>)[key];
+    return strings[key] ?? key;
   };
 }
 
@@ -19,11 +20,11 @@ export function useTranslations(locale: Locale) {
  * Turn a root-relative path into a real URL for this site.
  *
  * Two things happen here. First it prefixes Astro's `base` — a no-op while the
- * site sits at the root of vonostudio.com, but it keeps a future move under a
+ * site sits at the root of its domain, but it keeps a future move under a
  * sub-path to a one-line config change instead of a hunt through templates.
- * Second it adds the trailing slash: pages are built directory-style
- * (/projeler/vono-ofis/index.html), so matching the canonical URL exactly keeps
- * the hreflang pairs reciprocal and spares visitors a redirect hop.
+ * Second it adds the trailing slash: pages are served directory-style
+ * (/projeler/vono-ofis/), so matching the canonical URL exactly keeps the
+ * hreflang pairs reciprocal and spares visitors a redirect hop.
  */
 export function withBase(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -38,7 +39,5 @@ export function localePath(locale: Locale, path: string): string {
   return withBase(locale === 'tr' ? path : `/en${path === '/' ? '' : path}`);
 }
 
-export const services: {
-  title: Record<Locale, string>;
-  desc: Record<Locale, string>;
-}[] = servicesData.map((s) => ({ title: s.title, desc: s.description }));
+export const services = () =>
+  loadServices().map((s) => ({ title: s.title, desc: s.description }));

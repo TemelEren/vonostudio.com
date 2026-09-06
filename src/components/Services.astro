@@ -6,6 +6,7 @@ interface Props {
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const list = services();
 ---
 
 <section class="section" id="hizmetler">
@@ -16,7 +17,7 @@ const t = useTranslations(locale);
 
     <ul class="services">
       {
-        services.map((s, i) => (
+        list.map((s, i) => (
           <li data-reveal>
             <span class="index">0{i + 1}</span>
             <h3>{s.title[locale]}</h3>

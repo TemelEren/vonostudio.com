@@ -1,5 +1,5 @@
 ---
-import { projects } from '../data/projects';
+import { loadProjects } from '../db';
 import { useTranslations, type Locale } from '../i18n/ui';
 import { projectPath } from '../seo/pages';
 
@@ -8,6 +8,7 @@ interface Props {
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const projects = loadProjects();
 ---
 
 <section class="section" id="projeler">

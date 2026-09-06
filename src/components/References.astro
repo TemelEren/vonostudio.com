@@ -1,12 +1,13 @@
 ---
 import { useTranslations, type Locale } from '../i18n/ui';
-import references from '../../content/references.json';
+import { loadReferences } from '../db';
 
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const references = loadReferences();
 ---
 
 <section class="section" id="referanslar">

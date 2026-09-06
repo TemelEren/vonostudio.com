@@ -1,12 +1,9 @@
 ---
 import ProjectDetail from '../../components/ProjectDetail.astro';
-import { projects } from '../../data/projects';
+import { loadProject } from '../../db';
 
-export function getStaticPaths() {
-  return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
-}
-
-const { project } = Astro.props;
+const project = loadProject(Astro.params.slug!);
+if (!project) return Astro.rewrite('/404');
 ---
 
 <ProjectDetail locale="tr" project={project} />

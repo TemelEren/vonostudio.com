@@ -2,3 +2,12 @@ node_modules/
 dist/
 .astro/
 .DS_Store
+
+# The content database is data, not source — build it with: npm run db:seed
+content.db
+content.db-wal
+content.db-shm
+
+# Per-server Docker settings and the bind-mounted database
+docker-compose/.env
+docker-compose/data/

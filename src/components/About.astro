@@ -1,15 +1,15 @@
 ---
 import { useTranslations, type Locale } from '../i18n/ui';
-import about from '../../content/about.json';
-import settings from '../../content/settings.json';
+import { loadAbout, loadSettings } from '../db';
 
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const about = loadAbout();
 
-const stats = settings.stats.map((s) => ({ value: s.value, label: s.label[locale] }));
+const stats = loadSettings().stats.map((s) => ({ value: s.value, label: s.label[locale] }));
 ---
 
 <section class="section" id="hakkimizda">

@@ -4,7 +4,7 @@ import '@fontsource-variable/inter';
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import settings from '../../content/settings.json';
+import { loadSettings } from '../db';
 import { withBase, type Locale } from '../i18n/ui';
 import { graph } from '../seo/schema';
 import { isProductionSite } from '../seo/site';
@@ -24,6 +24,7 @@ interface Props {
   /** Keep this page out of search results (used by 404). */
   noindex?: boolean;
 }
+const settings = loadSettings();
 const {
   locale,
   title,
@@ -70,7 +71,7 @@ const jsonLd = graph(site, locale, schema);
     <link rel="alternate" hreflang="x-default" href={defaultHref} />
 
     <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
-    <link rel="sitemap" type="application/xml" href={withBase('/sitemap-index.xml')} />
+    <link rel="sitemap" type="application/xml" href={withBase('/sitemap.xml')} />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)" />
 

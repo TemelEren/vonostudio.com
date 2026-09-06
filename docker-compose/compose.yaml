@@ -1,0 +1,42 @@
+# Vono Studio sitesi — cd docker-compose && docker compose up -d --build
+#
+# Sunucu 8081 portunu dinler ve varsayılan olarak yalnızca 127.0.0.1'e açılır:
+# dışarıya HAProxy açar. Ayarlar için .env dosyasına bakın (.env.example'ı kopyalayın).
+name: vonostudio
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker-compose/Dockerfile
+      args:
+        # Derleme zamanında gömülür — değiştirince --build ile yeniden kurun.
+        SITE_URL: ${SITE_URL:-https://next.vonostudio.com}
+    image: vonostudio:${TAG:-latest}
+    container_name: vonostudio-web
+    restart: unless-stopped
+
+    ports:
+      # HAProxy aynı sunucuda olduğu için sadece localhost'a bağlanır.
+      # HAProxy başka bir makinede/ağdaysa BIND_ADDRESS=0.0.0.0 yapın.
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-8081}:8081"
+
+    environment:
+      CONTENT_DB: /data/content.db
+
+    volumes:
+      # İçerik veritabanı. Düzenleme arayüzü de bu volume'u bağlayarak yazar.
+      - content:/data
+      # Dosyayı sunucuda düz bir klasörde tutmayı tercih ederseniz üsttekini
+      # kapatıp bunu açın; klasörün konteynerdeki 'node' kullanıcısına ait
+      # olması gerekir:  mkdir -p data && sudo chown 1000:1000 data
+      # - ./data:/data
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  content:

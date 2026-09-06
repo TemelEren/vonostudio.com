@@ -1,8 +1,8 @@
 // Structured data (schema.org JSON-LD) for Google's rich results and the
 // knowledge panel. Everything here reads from /content/settings.json — see
 // CONTENT-GUIDE.md.
-import settings from '../../content/settings.json';
-import type { Locale } from '../i18n/ui';
+import { loadSettings } from '../db';
+import type { Locale } from '../i18n/locale';
 
 export const ORG_ID = '#organization';
 export const SITE_ID = '#website';
@@ -11,6 +11,7 @@ const abs = (site: URL, path: string) => new URL(path, site).href;
 
 /** The studio itself — referenced by every other node via @id. */
 export function organizationSchema(site: URL, locale: Locale) {
+  const settings = loadSettings();
   return {
     '@type': ['Organization', 'ArchitecturalService'],
     '@id': abs(site, ORG_ID),
@@ -37,6 +38,7 @@ export function organizationSchema(site: URL, locale: Locale) {
 }
 
 export function websiteSchema(site: URL, locale: Locale) {
+  const settings = loadSettings();
   return {
     '@type': 'WebSite',
     '@id': abs(site, SITE_ID),

@@ -1,12 +1,13 @@
 ---
 import { useTranslations, type Locale } from '../i18n/ui';
-import settings from '../../content/settings.json';
+import { loadSettings } from '../db';
 
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const settings = loadSettings();
 
 const email = settings.email;
 const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
