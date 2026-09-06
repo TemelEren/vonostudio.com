@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { loadProjects, type Project } from '../db';
+import { loadProjects, pick, resolveProjectMeta, type Project } from '../db';
 import { useTranslations, localePath, type Locale } from '../i18n/ui';
 import { projectPath, projectSchema } from '../seo/pages';
 
@@ -18,13 +18,16 @@ const next = projects[(index + 1) % projects.length];
 
 const altUrl = projectPath(locale === 'tr' ? 'en' : 'tr', project.slug);
 
-const meta = [
-  { label: t('project.year'), value: project.year },
-  { label: t('project.location'), value: project.location[locale] },
-  { label: t('project.area'), value: project.area },
-  { label: t('project.status'), value: project.status[locale] },
-  { label: t('project.category'), value: project.category[locale] },
-];
+/* The strip is a list now, not five fixed columns: it can be renamed,
+   reordered, trimmed or extended per project (see db/projectMeta.ts). A row
+   with no value prints nothing at all — an empty caption reads as missing
+   data rather than as a field this project simply does not have. */
+const meta = resolveProjectMeta(project)
+  .map((row) => ({
+    label: pick(row.label, locale) || (row.labelKey ? t(row.labelKey) : ''),
+    value: pick(row.value, locale).trim(),
+  }))
+  .filter((row) => row.value);
 ---
 
 <Base
@@ -45,16 +48,18 @@ const meta = [
         <p class="excerpt">{project.excerpt[locale]}</p>
       </header>
 
-      <dl class="meta" data-reveal>
-        {
-          meta.map((m) => (
-            <div>
-              <dt>{m.label}</dt>
-              <dd>{m.value}</dd>
-            </div>
-          ))
-        }
-      </dl>
+      {
+        meta.length > 0 && (
+          <dl class="meta" data-reveal>
+            {meta.map((m) => (
+              <div>
+                <dt>{m.label}</dt>
+                <dd>{m.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
     </div>
 
     <figure class="cover" data-reveal>
@@ -123,13 +128,21 @@ const meta = [
     color: var(--muted);
   }
 
+  /* The row count is content, not layout: a project may carry three fields or
+     nine. `auto-fit` lays out however many there are and folds them onto more
+     lines as the viewport narrows, so no breakpoint has to know the number.
+     `min()` keeps a single column from overflowing a phone. */
   .meta {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+    gap: 1.5rem clamp(1.25rem, 2.5vw, 2.5rem);
     border-top: 1px solid var(--line);
     margin-top: clamp(2.5rem, 5vw, 4rem);
     padding-top: 1.5rem;
+  }
+
+  .meta > div {
+    min-width: 0;
   }
 
   .meta dt {
@@ -143,6 +156,7 @@ const meta = [
     margin-top: 0.35rem;
     font-family: var(--font-display);
     font-weight: 500;
+    overflow-wrap: anywhere;
   }
 
   .cover {
@@ -228,7 +242,7 @@ const meta = [
 
   @media (max-width: 800px) {
     .meta {
-      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
     }
   }
 </style>

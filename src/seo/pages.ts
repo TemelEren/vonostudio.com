@@ -1,6 +1,6 @@
 // Page-level schema.org nodes, handed to <Base schema={...}>.
 import { breadcrumbSchema, ORG_ID, SITE_ID } from './schema';
-import { loadProjects, loadSettings, type Project } from '../db';
+import { loadProjects, loadSettings, metaText, type Project } from '../db';
 import { localePath, useTranslations, type Locale } from '../i18n/ui';
 
 const abs = (site: URL, path: string) => new URL(path, site).href;
@@ -47,6 +47,13 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
   const url = abs(site, projectPath(locale, project.slug));
   const t = useTranslations(locale);
 
+  /* Read by key off the meta strip, which a project may no longer carry. A
+     missing property is dropped from the JSON-LD rather than emitted empty:
+     Google reading an invented year is worse than reading none. */
+  const year = metaText(project, 'year', locale);
+  const category = metaText(project, 'category', locale);
+  const location = metaText(project, 'location', locale);
+
   return [
     {
       '@type': 'CreativeWork',
@@ -55,10 +62,10 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
       name: project.title,
       description: project.excerpt[locale],
       image: [project.cover, ...project.gallery].map((src) => abs(site, src)),
-      dateCreated: project.year,
-      genre: project.category[locale],
+      dateCreated: year || undefined,
+      genre: category || undefined,
       inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-      locationCreated: { '@type': 'Place', name: project.location[locale] },
+      locationCreated: location ? { '@type': 'Place', name: location } : undefined,
       creator: { '@id': abs(site, ORG_ID) },
       isPartOf: { '@id': abs(site, SITE_ID) },
     },

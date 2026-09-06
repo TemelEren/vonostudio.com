@@ -4,6 +4,7 @@ import type { Locale } from '../i18n/locale';
 import type { About, Asset, Project, Reference, Service, Settings } from './types';
 
 export type * from './types';
+export * from './projectMeta';
 
 /** Path to the content database. Overridable so staging/live can differ. */
 export const DB_PATH = process.env.CONTENT_DB ?? 'content.db';

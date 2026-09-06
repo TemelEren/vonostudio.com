@@ -106,17 +106,49 @@ geçmesin) ve `meta.description` (~155 karakter).
 {
   "slug": "vono-ofis",              // satırın slug sütunuyla aynı olmalı
   "title": "Vono Ofis",
-  "year": "2021",
-  "area": "120 m²",
-  "location": { "tr": "İstinye, İstanbul", "en": "İstinye, Istanbul" },
-  "category": { "tr": "...", "en": "..." },
-  "status":   { "tr": "...", "en": "..." },
+  "meta": [                         // başlık altındaki bilgi şeridi — bkz. aşağısı
+    { "key": "year",     "value": "2021" },
+    { "key": "location", "value": { "tr": "İstinye, İstanbul", "en": "İstinye, Istanbul" } },
+    { "label": { "tr": "Sahip", "en": "Owner" }, "value": "Ali Yılmaz" }
+  ],
   "excerpt":  { "tr": "...", "en": "..." },   // proje sayfasının meta açıklaması
   "body":     { "tr": ["paragraf", ...], "en": [...] },
   "cover":   "/projects/vono-ofis.jpg",       // assets yolu
   "gallery": ["/projects/vono-ofis-1.jpg"]    // boş liste olabilir
 }
 ```
+
+### Bilgi şeridi (`meta`)
+
+Proje başlığının altında yan yana çıkan "Yıl · Konum · Alan · Durum · Kategori"
+satırı. Sabit beş alan değil, **satır listesidir**: adları değiştirilebilir,
+sırası değiştirilebilir, gereksizi çıkarılabilir ve projeye özel alan eklenebilir.
+Kaç alan olursa olsun sitede yan yana dizilir ve dar ekranda alt alta geçer.
+
+```jsonc
+{ "key": "year",                              "value": "2021" }
+{ "key": "status", "label": { "tr": "Aşama" }, "value": { "tr": "...", "en": "..." } }
+{                  "label": { "tr": "Sahip", "en": "Owner" }, "value": "Ali Yılmaz" }
+```
+
+- **`key` satırın kimliğidir, adı değil.** Proje kartı ve arama sonucu
+  (`schema.org`) `year`, `location` ve `category` satırlarını ANAHTARLARIYLA
+  okur; bu yüzden "Yıl"ı "Tarih" diye yeniden adlandırmak onları bozmaz, ama
+  satırı SİLMEK değeri oralardan da kaldırır — yerine bir şey uydurulmaz.
+  Sonradan eklenen alanların anahtarı yoktur.
+- **`label` yalnız yeniden adlandırınca yazılır.** Yokken site kendi
+  `project.<key>` arayüz metnini kullanır → "Yıl" sözcüğü tek yerden, bütün
+  projeler için değiştirilebilir kalır. Tek dili yazmak meşrudur; öbür dilde
+  sitenin kendi adı çıkar (panel bunu uyarı olarak söyler).
+- **Değerin BİÇİMİ, çevrilip çevrilmediğini söyler**: düz metin iki dilde aynı
+  okunur (yıl, m²), `{ "tr": …, "en": … }` çifti çevrilmesi gerekendir ve boş
+  kalan yanı 3. kural kapsamındadır. Değerin yanına ayrı bir bayrak konulsaydı
+  ikisi ayrışabilirdi.
+- **Değeri boş olan satır sitede hiç basılmaz** — boş bir başlık, "bu projede
+  yok" değil "veri eksik" diye okunur.
+- **`meta` YOKSA eski beş alan (`year · area · location · category · status`)
+  şeridin kendisidir** ve aynen çalışır; panel bu satırlara ilk dokunuşta
+  listeye çevirir ve o beş alanı siler — aynı değer iki yerde durmaz.
 
 - `slug` adres olur: `/projeler/<slug>` ve `/en/projects/<slug>`. Küçük harf ve
   tire kullanın; boşluk ve Türkçe karakter olmasın.

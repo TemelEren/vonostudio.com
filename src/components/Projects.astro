@@ -1,5 +1,5 @@
 ---
-import { loadProjects } from '../db';
+import { loadProjects, projectCardLine } from '../db';
 import { useTranslations, type Locale } from '../i18n/ui';
 import { projectPath } from '../seo/pages';
 
@@ -8,7 +8,9 @@ interface Props {
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
-const projects = loadProjects();
+/* The subtitle is built from the meta strip by KEY, so it survives a renamed
+   row and simply drops a part whose row was removed (db/projectMeta.ts). */
+const projects = loadProjects().map((p) => ({ ...p, line: projectCardLine(p, locale) }));
 ---
 
 <section class="section" id="projeler">
@@ -26,9 +28,7 @@ const projects = loadProjects();
             </figure>
             <div class="meta">
               <h3>{p.title}</h3>
-              <span>
-                {p.category[locale]} · {p.location[locale]}, {p.year}
-              </span>
+              {p.line && <span>{p.line}</span>}
             </div>
           </a>
         ))
