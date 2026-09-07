@@ -1,10 +1,24 @@
 ---
+/* Every family the theme may choose (db/theme.ts -> FONTS).
+
+   WARNING: IMPORTING A FAMILY DOES NOT DOWNLOAD IT. These are @font-face
+   declarations; a browser fetches the woff2 only for a family the page
+   actually renders with. So the visitor still downloads TWO faces - the two
+   the theme selected - and the cost of offering the rest is a few KB of CSS.
+   WARNING: A FAMILY IN THE CATALOGUE MUST BE IMPORTED HERE. Choosing one that
+   is not renders in the fallback with nothing to explain why. */
 import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/inter';
+import '@fontsource-variable/dm-sans';
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/archivo';
+import '@fontsource-variable/syne';
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/lora';
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import { loadSettings } from '../db';
+import { loadSettings, loadTheme, themeCss } from '../db';
 import { withBase, type Locale } from '../i18n/ui';
 import { graph } from '../seo/schema';
 import { isProductionSite } from '../seo/site';
@@ -25,6 +39,9 @@ interface Props {
   noindex?: boolean;
 }
 const settings = loadSettings();
+/* The editable look. A database with no theme row resolves to the design the
+   site shipped with, so this is safe on every existing install. */
+const theme = loadTheme();
 const {
   locale,
   title,
@@ -38,7 +55,11 @@ const {
 
 const site = Astro.site!;
 // Preview domains are never indexed, whatever the page asks for.
-const blockIndexing = noindex || !isProductionSite(site);
+/* WARNING: A PREVIEW IS NEVER INDEXED. Preview domains were already covered
+   by isProductionSite, but the draft can also be previewed ON the production
+   domain - and that page must not reach search results. */
+const preview = Astro.locals.preview === true;
+const blockIndexing = noindex || preview || !isProductionSite(site);
 const canonical = new URL(Astro.url.pathname, site);
 const altLocale: Locale = locale === 'tr' ? 'en' : 'tr';
 const altHref = new URL(altUrl, site);
@@ -96,8 +117,23 @@ const jsonLd = graph(site, locale, schema);
       // Marks JS availability so animation-ready elements can start hidden.
       document.documentElement.classList.add('js');
     </script>
+    {/* ⚠ LAST IN HEAD ON PURPOSE: these are :root custom properties, the same
+        specificity as global.css, so ORDER is what makes them win. Moving this
+        above the bundled stylesheet would silently restore the old palette. */}
+    <style set:html={themeCss(theme)} />
   </head>
   <body>
+    {
+      /* Shown only while previewing the unpublished draft. It is deliberately
+         part of the page and not an overlay the panel adds: someone who opens
+         the preview link in its own tab must still be able to tell at a glance
+         that this is not the live site. */
+      preview && (
+        <div class="onizleme-serit">
+          TASLAK ÖNİZLEME — bu sayfa yayında değildir
+        </div>
+      )
+    }
     <a class="skip-link" href="#main">{locale === 'tr' ? 'İçeriğe geç' : 'Skip to content'}</a>
     <Nav locale={locale} altUrl={altUrl} />
     <main id="main">
@@ -122,3 +158,20 @@ const jsonLd = graph(site, locale, schema);
     </script>
   </body>
 </html>
+
+<style is:global>
+  /* Preview banner. `is:global` because the banner is rendered by the layout
+     but must stay above every component's own stacking context. */
+  .onizleme-serit {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 9999;
+    background: #b45309;
+    color: #fff;
+    font: 600 0.75rem/1 var(--font-body, system-ui), sans-serif;
+    letter-spacing: 0.08em;
+    text-align: center;
+    padding: 0.5rem 1rem;
+  }
+  body:has(.onizleme-serit) { padding-top: 2rem; }
+</style>

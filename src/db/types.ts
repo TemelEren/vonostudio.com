@@ -83,6 +83,23 @@ export interface Project {
   gallery: string[];
 }
 
+
+/**
+ * The editable look: colours, typefaces and the two lengths the layout is built
+ * on. Stored under the `theme` content key.
+ *
+ * `fonts` holds CATALOGUE KEYS, not CSS (see db/theme.ts) — the site turns a key
+ * into a font stack, so an editor can never write raw CSS into a stylesheet the
+ * site serves, and a family that is not installed cannot be selected into a
+ * silent fallback.
+ */
+export interface Theme {
+  colors: { bg: string; ink: string; muted: string; line: string; soft: string };
+  fonts: { display: string; body: string };
+  /** rem. `pad` becomes clamp(padMin, 4vw, padMax). */
+  layout: { padMin: number; padMax: number; navH: number };
+}
+
 export interface Asset {
   path: string;
   mime: string;
