@@ -1,0 +1,219 @@
+---
+/**
+ * Highlights an interface string inside the draft preview.
+ *
+ * The panel lists 34 keys (`nav.menu`, `contact.cta`); the key alone tells the
+ * editor nothing about where the sentence lands. Hovering a row now asks this
+ * script to find that sentence on the page and outline it.
+ *
+ * WARNING: PREVIEW ONLY. Base.astro renders this exclusively when the request
+ * unlocked the draft, so the public site never carries a message listener and
+ * never ships this code. What it can do is deliberately tiny — draw an outline
+ * and scroll — so even inside the preview it cannot change what is published.
+ */
+import { useTranslations } from '../i18n/ui';
+import type { Locale } from '../i18n/locale';
+import trSeed from '../../seed/content/strings.tr.json';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+
+/* The values as this page actually rendered them: matching against the SEED
+   would miss every string the editor has since changed - the exact case the
+   editor is looking at. Keys come from the seed because that is the type. */
+const t = useTranslations(locale);
+const strings: Record<string, string> = {};
+for (const key of Object.keys(trSeed) as (keyof typeof trSeed)[]) strings[key] = t(key);
+---
+
+<!-- is:inline is deliberate: this is data, not code. Without it Astro
+     would try to process the tag and warn about it every build. -->
+<script is:inline type="application/json" id="vono-strings" set:html={JSON.stringify(strings)} />
+
+<script>
+  /* The panel and the site are different origins, so this is a postMessage
+     endpoint. It answers two messages and does nothing else. */
+  type Gelen = { vono?: string; anahtar?: string };
+
+  const ham = document.getElementById('vono-strings')?.textContent ?? '{}';
+  let metinler: Record<string, string> = {};
+  try {
+    metinler = JSON.parse(ham);
+  } catch {
+    metinler = {};
+  }
+
+  /* value -> keys. Two keys can share a sentence ("Hizmetlerimiz" is both the
+     menu item and the section title), so an element carries every key that
+     matches it; picking one would send the editor to the wrong place. */
+  const degerler = new Map<string, string[]>();
+  for (const [k, v] of Object.entries(metinler)) {
+    const s = (v ?? '').trim();
+    if (!s) continue;
+    if (!degerler.has(s)) degerler.set(s, []);
+    degerler.get(s)!.push(k);
+  }
+
+  const eslesenler = new Map<string, Element[]>();
+  const ekle = (anahtarlar: string[], el: Element) => {
+    for (const k of anahtarlar) {
+      if (!eslesenler.has(k)) eslesenler.set(k, []);
+      if (!eslesenler.get(k)!.includes(el)) eslesenler.get(k)!.push(el);
+    }
+  };
+
+  function indeksle() {
+    eslesenler.clear();
+    const hepsi = Array.from(document.body.querySelectorAll('*')).filter(
+      (el) => !el.closest('.onizleme-serit') && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE'
+    );
+
+    for (const el of hepsi) {
+      /* DEEPEST WINS: a section and its heading share the same text when the
+         heading is the only content, and outlining the section tells the
+         editor nothing. An element counts only when no child holds the text. */
+      const metin = (el.textContent ?? '').trim();
+      const anahtarlar = degerler.get(metin);
+      if (anahtarlar) {
+        const cocukta = Array.from(el.children).some((c) => (c.textContent ?? '').trim() === metin);
+        if (!cocukta) ekle(anahtarlar, el);
+      }
+
+      /* Text a visitor never reads but the editor still writes: the alt on the
+         team photo, an aria-label, a title. The element itself is on screen,
+         so outlining it is honest. */
+      for (const attr of ['alt', 'aria-label', 'title']) {
+        const v = el.getAttribute(attr);
+        const k2 = v ? degerler.get(v.trim()) : undefined;
+        if (k2) ekle(k2, el);
+      }
+    }
+
+    /* WARNING: EXACT MATCH FINDS LESS THAN HALF OF THEM. Templates put these
+       strings INSIDE a longer sentence - the back link renders "← Tüm projeler"
+       and the footer "© 2026 Vono Studio — Tüm hakları saklıdır." An editor
+       hovering those rows would be told the text is not on the page, which is
+       wrong and unfixable from their side. So a value nothing matched exactly
+       falls back to the TIGHTEST element that contains it: an element counts
+       only when no child of it still contains the value, which lands on the
+       link rather than on <body>. */
+    for (const [deger, anahtarlar] of degerler) {
+      if (anahtarlar.some((k) => eslesenler.has(k))) continue;
+      let en: Element | null = null;
+      for (const el of hepsi) {
+        if (!(el.textContent ?? '').includes(deger)) continue;
+        const cocukta = Array.from(el.children).some((c) => (c.textContent ?? '').includes(deger));
+        if (!cocukta) { en = el; break; }
+      }
+      if (en) ekle(anahtarlar, en);
+    }
+  }
+
+  let temizle: (() => void) | null = null;
+
+  /* How many boxes were drawn, and how many matches were on the page but not
+     drawable. The second number is the difference between "this sentence is not
+     here" and "it is here, just hidden at this width" - the menu links collapse
+     into the burger button in a narrow preview, and without the distinction the
+     panel would report nothing at all and look broken. */
+  let sonGizli = 0;
+
+  function vurgula(anahtar: string): number {
+    temizle?.();
+    sonGizli = 0;
+    const hedefler = eslesenler.get(anahtar) ?? [];
+    if (!hedefler.length) return 0;
+
+    const kutular: HTMLElement[] = [];
+    for (const el of hedefler) {
+      const r = el.getBoundingClientRect();
+      if (!r.width && !r.height) { sonGizli += 1; continue; }
+      const kutu = document.createElement('div');
+      kutu.className = 'vono-vurgu-kutu';
+      kutu.style.top = `${r.top + window.scrollY}px`;
+      kutu.style.left = `${r.left + window.scrollX}px`;
+      kutu.style.width = `${r.width}px`;
+      kutu.style.height = `${r.height}px`;
+      kutu.dataset.anahtar = anahtar;
+      document.body.appendChild(kutu);
+      kutular.push(kutu);
+    }
+    if (!kutular.length) return 0;
+
+    hedefler[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    /* The outline is drawn as a sibling box, not as a style on the element:
+       touching the element's own style could shift the layout the editor is
+       judging, and this pane exists to show the page as it is. */
+    temizle = () => {
+      kutular.forEach((k) => k.remove());
+      temizle = null;
+    };
+    return kutular.length;
+  }
+
+  function hazir() {
+    indeksle();
+    /* Arriving with ?vurgu=... - the panel navigates here when the string is
+       on another page, so the highlight has to survive the page load. */
+    const istenen = new URLSearchParams(location.search).get('vurgu');
+    if (istenen) requestAnimationFrame(() => vurgula(istenen));
+  }
+
+  if (document.readyState === 'complete') hazir();
+  else window.addEventListener('load', hazir);
+
+  window.addEventListener('message', (e: MessageEvent<Gelen>) => {
+    const d = e.data;
+    if (!d || typeof d !== 'object') return;
+    /* "Are you the draft?" - the panel asks after the frame loads. A token the
+       two sides do not share is the one failure with no error anywhere: the
+       site simply serves the published page and the editor reads it as "my
+       change did not show up". Silence here IS the answer, so the panel can
+       say so instead of leaving them to guess. */
+    if (d.vono === 'yoklama') {
+      (e.source as Window | null)?.postMessage(
+        { vono: 'yoklama-sonuc', ok: true },
+        { targetOrigin: e.origin === 'null' ? '*' : e.origin }
+      );
+      return;
+    }
+    if (d.vono === 'temizle') {
+      temizle?.();
+      return;
+    }
+    if (d.vono !== 'vurgu' || typeof d.anahtar !== 'string') return;
+    if (!eslesenler.size) indeksle();
+    const n = vurgula(d.anahtar);
+    /* Answer even when nothing matched: silence would leave the panel unable
+       to tell "not on this page" from "the message never arrived". */
+    (e.source as Window | null)?.postMessage(
+      { vono: 'vurgu-sonuc', anahtar: d.anahtar, bulundu: n, gizli: sonGizli },
+      { targetOrigin: e.origin === 'null' ? '*' : e.origin }
+    );
+  });
+
+  /* The boxes are absolutely positioned from a rect, so any reflow moves the
+     page out from under them. Cheaper and less confusing than re-measuring. */
+  window.addEventListener('resize', () => temizle?.());
+</script>
+
+<style is:global>
+  .vono-vurgu-kutu {
+    position: absolute;
+    z-index: 9998;
+    pointer-events: none;
+    border: 2px solid #b45309;
+    border-radius: 3px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.04);
+    animation: vono-vurgu-nabiz 1.2s ease-out 2;
+  }
+  @keyframes vono-vurgu-nabiz {
+    0% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.04), 0 0 0 0 rgba(180, 83, 9, 0.5); }
+    100% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.04), 0 0 0 14px rgba(180, 83, 9, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vono-vurgu-kutu { animation: none; }
+  }
+</style>

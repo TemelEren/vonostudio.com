@@ -18,6 +18,7 @@ import '@fontsource-variable/lora';
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import PreviewInspect from '../components/PreviewInspect.astro';
 import { loadSettings, loadTheme, themeCss } from '../db';
 import { withBase, type Locale } from '../i18n/ui';
 import { graph } from '../seo/schema';
@@ -140,6 +141,12 @@ const jsonLd = graph(site, locale, schema);
       <slot />
     </main>
     <Footer locale={locale} />
+
+    {
+      /* Lets the editing panel point at a sentence in this page. Preview
+         only - the public site never carries a message listener. */
+      preview && <PreviewInspect locale={locale} />
+    }
 
     <script>
       const items = document.querySelectorAll('[data-reveal]');

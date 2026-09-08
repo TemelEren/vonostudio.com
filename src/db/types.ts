@@ -98,6 +98,8 @@ export interface Theme {
   fonts: { display: string; body: string };
   /** rem. `pad` becomes clamp(padMin, 4vw, padMax). */
   layout: { padMin: number; padMax: number; navH: number };
+  /** Fonts the editor uploaded. Validated in db/theme.ts before they reach CSS. */
+  customFonts?: { key: string; label: string; path: string }[];
 }
 
 export interface Asset {

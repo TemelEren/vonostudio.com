@@ -60,7 +60,20 @@ export const onRequest = defineMiddleware((context, next) => {
       'Cache-Control': preview ? 'no-store' : 'no-cache',
       ETag: etag,
       'Last-Modified': new Date(asset.updated).toUTCString(),
+      /* The stored type is the only type. Without this a browser may sniff an
+         upload into something executable and run it on this origin. */
+      'X-Content-Type-Options': 'nosniff',
     };
+
+    /* WARNING: AN SVG IS A DOCUMENT, NOT A PICTURE. Inside an <img> a browser
+       already refuses its scripts, but a visitor who opens the file's own URL
+       gets a full document on this origin - so an uploaded logo could read the
+       preview cookie and rewrite the page. The policy leaves drawing alone and
+       takes scripting away; it costs nothing for the honest logos we serve. */
+    if (asset.mime === 'image/svg+xml') {
+      headers['Content-Security-Policy'] =
+        "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox";
+    }
 
     if (context.request.headers.get('if-none-match') === etag) {
       return new Response(null, { status: 304, headers });
