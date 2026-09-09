@@ -63,6 +63,33 @@ export interface ProjectMeta {
   value: string | Localized;
 }
 
+/**
+ * One item in a project's media strip.
+ *
+ * A project page is mostly pictures, and the order they appear in is an
+ * editorial decision, not a consequence of which field they were typed into.
+ * That is why there is ONE list rather than a cover plus a gallery: the editor
+ * moves rows, and the page follows.
+ *
+ * `kind` is normally read off the extension; it is only written when the file
+ * name cannot say (an external URL). `span` is how many of the three columns
+ * the item takes, and `ratio` a DELIBERATE crop — absent, a picture keeps its
+ * own shape and nothing is cut off.
+ *
+ * See db/projectMedia.ts; never read this array directly, or a project written
+ * before the list existed shows an empty page.
+ */
+export interface ProjectMediaItem {
+  src: string;
+  kind?: 'image' | 'video';
+  /** Still shown before a video starts. Absent: the first frame. */
+  poster?: string;
+  /** 1–3. Absent: a repeating rhythm, so an untouched project still varies. */
+  span?: number;
+  /** 'w/h', e.g. '16/9'. Absent: natural for a picture, 16/9 for a video. */
+  ratio?: string;
+}
+
 export interface Project {
   slug: string;
   title: string;
@@ -72,6 +99,13 @@ export interface Project {
    * these directly, or a renamed strip and the card will disagree.
    */
   meta?: ProjectMeta[];
+  /**
+   * Filter buttons this project appears under (db/projectCategories.ts).
+   * Keys, never labels — renaming a category must not detach its projects.
+   * Absent means the project shows only under "all", which is also what every
+   * project did before the filter row existed.
+   */
+  categories?: string[];
   year?: string;
   area?: string;
   location?: Localized;
@@ -79,7 +113,19 @@ export interface Project {
   status?: Localized;
   excerpt: Localized;
   body: Localized<string[]>;
+  /**
+   * The card and share image. Kept apart from `media` on purpose: it is what
+   * the grid and every shared link show, whether or not the detail page opens
+   * with it.
+   */
   cover: string;
+  /**
+   * The ordered media strip of the detail page. Absent on projects written
+   * before it existed — those fall back to `[cover, ...gallery]`. See
+   * db/projectMedia.ts; never read this or `gallery` directly.
+   */
+  media?: ProjectMediaItem[];
+  /** Superseded by `media`, which the editor writes instead once it is used. */
   gallery: string[];
 }
 
@@ -98,6 +144,12 @@ export interface Theme {
   fonts: { display: string; body: string };
   /** rem. `pad` becomes clamp(padMin, 4vw, padMax). */
   layout: { padMin: number; padMax: number; navH: number };
+  /**
+   * How the page moves. `projectFilter` is a CATALOGUE KEY (db/theme.ts), never
+   * CSS: it names one of a fixed set of transitions the stylesheet already
+   * carries, so an editor picks a behaviour rather than writing one.
+   */
+  motion?: { projectFilter: string; filterMs: number };
   /** Fonts the editor uploaded. Validated in db/theme.ts before they reach CSS. */
   customFonts?: { key: string; label: string; path: string }[];
 }

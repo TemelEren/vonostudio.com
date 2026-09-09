@@ -68,10 +68,21 @@ const ogImage = new URL(image, site);
 // The Turkish pages are the default locale, so they double as x-default.
 const defaultHref = locale === 'tr' ? canonical : altHref;
 const jsonLd = graph(site, locale, schema);
+
+/* Which transition the project filter uses. An ATTRIBUTE rather than a class
+   the script adds, so the stylesheet is right on the first paint and the filter
+   script stays a plain toggle that knows no animation names.
+
+   WARNING: THIS COMMENT CANNOT LIVE NEXT TO THE `<html>` TAG. Written as a JSX
+   comment between `<!doctype html>` and `<html>`, the Astro compiler dropped
+   BOTH attribute values - the served markup came out as a bare `<html data-anim>`
+   with no `lang` either. It cost nothing to spot in a browser and would have
+   been invisible in review. */
+const anim = theme.motion?.projectFilter ?? 'fade';
 ---
 
 <!doctype html>
-<html lang={locale === 'tr' ? 'tr-TR' : 'en-US'}>
+<html lang={locale === 'tr' ? 'tr-TR' : 'en-US'} data-anim={anim}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

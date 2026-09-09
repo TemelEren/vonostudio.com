@@ -7,7 +7,49 @@
   --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --pad: clamp(1.25rem, 4vw, 4rem);
-  --nav-h: 4.5rem;
+  /* The bar carries the mark and the menu; measured against the reference its
+     own header block runs ~134px against our 80. 88px is the middle: the logo
+     below sits at ~31% of it, which is where a wordmark reads as the page's
+     signature rather than as a caption. */
+  --nav-h: 5.5rem;
+
+  /* ---- Display type scale ----
+     WARNING: THESE ARE ONE LADDER, NOT SIX INDEPENDENT NUMBERS. Shrinking a
+     single step collapses the rung below it: the section title and the service
+     titles used to sit at 72px and 41.6px, and cutting only the first would
+     have put them within a few pixels of each other. Measured at 1440px, the
+     page previously ran 88 / 72 / 64 / 44.8 / 41.6 / 30.4 - a heading 4.9x the
+     body text, where the reference this was compared against tops out at 33px
+     and 1.8x. The ladder below lands at 62 / 50 / 38 / 28 / 24: calmer than
+     before, still editorial rather than a copy of that reference. Change a step
+     and re-measure the whole ladder. */
+  --t-hero: clamp(2.2rem, 4.4vw, 3.85rem);
+  --t-section: clamp(1.85rem, 3.5vw, 3.1rem);
+  --t-display: clamp(1.35rem, 2.7vw, 2.4rem);
+  --t-item: clamp(1.15rem, 2vw, 1.75rem);
+  --t-item-sm: clamp(1.05rem, 1.7vw, 1.5rem);
+  /* The bar reads as chrome, not as a whisper: 0.78rem/500 measured 12.48px
+     against the reference's 14px/700, and tracking makes small type feel
+     lighter still.
+
+     WARNING: SIZE ALONE DOES NOT BUY PRESENCE — TRACKING GIVES IT BACK. The
+     first correction went to 0.85rem/600/0.14em and measured 13.6px, still
+     under the reference's 14px/700/0 while the page's own h1 sat at 61.6px:
+     a bar four and a half times smaller than the words under it. Every lever
+     moves together now — 15.2px, weight 700, tracking cut to 0.09em. Widening
+     the tracking again undoes the size. */
+  --t-nav: 0.95rem;
+  /* Small caps that label a thing rather than say it: the eyebrow over the mail
+     address, the column headings under it. Measured before, the same role was
+     being set at 12.8px in one place and 12px two lines down - not a hierarchy,
+     just drift. One value, one place. */
+  --t-label: 0.75rem;
+
+  /* How long the project filter takes to change the grid. The theme overrides
+     it (db/theme.ts); the value here is what an installation with no theme row
+     gets, so the transition works before anyone has opened the panel. WHICH
+     animation runs is `<html data-anim>`, not a number. */
+  --filter-ms: 420ms;
 }
 
 * {
@@ -90,7 +132,7 @@ button {
 }
 
 .section-title {
-  font-size: clamp(2.4rem, 5.5vw, 4.5rem);
+  font-size: var(--t-section);
 }
 
 /* Scroll-in reveals: hidden only when JS is available, shown via .revealed. */
@@ -130,7 +172,13 @@ button {
 /* Logo sizing lives here because Astro-scoped styles can't reach into the
    Logo component's SVG from parent components. */
 .nav-logo {
-  height: 1.05rem;
+  /* WARNING: A WORDMARK IS NOT A LABEL. At 1.05rem this measured 64x17px in an
+     80px bar - barely three pixels taller than the menu text beside it, so the
+     studio's name read as one more link. The reference's mark is 80px tall in a
+     ~134px header; ours is horizontal so it cannot match that height, but 1.6rem
+     (~26px, ~97px wide) puts it a clear step above the 15px menu and roughly a
+     third of the bar. Re-measure the pair together if either changes. */
+  height: 1.6rem;
   width: auto;
   transition: opacity 0.15s ease;
   /* Glyphs shift outside the viewBox while following the cursor —

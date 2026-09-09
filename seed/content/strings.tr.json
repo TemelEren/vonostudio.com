@@ -1,13 +1,13 @@
 {
   "meta.title": "Vono Design Studio Mimarlık İnşaat | İç Mimarlık",
   "meta.description": "Vono Mimari Tasarım Stüdyosu; mimarlık, iç mimarlık, kentsel tasarım, grafik tasarımı ve kurumsal kimlik alanlarında yenilikçi ve sürdürülebilir çözümler üreten ödüllü bir tasarım stüdyosudur.",
-
   "nav.projects": "Projeler",
   "nav.services": "Hizmetlerimiz",
   "nav.about": "Hakkımızda",
   "nav.contact": "İletişim",
   "nav.menu": "Menü",
   "projects.title": "İşlerimiz",
+  "projects.all": "Hepsi",
   "services.title": "Hizmetlerimiz",
   "about.title": "Hakkımızda",
   "about.vision": "Vizyon",
@@ -22,19 +22,21 @@
   "contact.address.label": "Adres",
   "contact.phone.label": "Telefon",
   "contact.social.label": "Sosyal",
-
+  "contact.mail.subject": "Proje talebi",
+  "contact.mail.body": "Merhaba,\n\nBir proje için görüşmek istiyorum.\n\nProje türü: \nKonum: \nYaklaşık alan: \nBaşlangıç: \n\nTeşekkürler,",
+  "contact.call": "Ara",
+  "contact.whatsapp": "WhatsApp",
+  "contact.directions": "Yol tarifi",
+  "contact.map.title": "Ofis konumu — harita",
   "footer.rights": "Tüm hakları saklıdır.",
-
   "notfound.title": "Sayfa bulunamadı",
   "notfound.description": "Aradığınız sayfa taşınmış ya da hiç var olmamış olabilir.",
   "notfound.home": "Ana sayfaya dön",
-
   "project.back": "Tüm projeler",
   "project.year": "Yıl",
   "project.location": "Konum",
   "project.area": "Alan",
   "project.status": "Durum",
   "project.category": "Kategori",
-  "project.prev": "Önceki proje",
-  "project.next": "Sonraki proje"
+  "project.sound": "Sesli izle"
 }

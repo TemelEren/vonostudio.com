@@ -1,9 +1,42 @@
 import { defineMiddleware } from 'astro:middleware';
-import { loadAsset, previewAllowed, withDatabase } from './db';
+import { loadAssetBytes, loadAssetMeta, loadAssetSlice, previewAllowed, withDatabase } from './db';
 
 /** Query parameter and cookie that hold the preview token. */
 const PREVIEW_PARAM = 'onizleme';
 const PREVIEW_COOKIE = 'vono_onizleme';
+
+/**
+ * One single byte range out of a `Range:` header, or null.
+ *
+ * WARNING: A VIDEO IS NOT FETCHED, IT IS SEEKED. Browsers ask for a film in
+ * pieces and Safari refuses to play one at all unless the server answers 206;
+ * without this the strip would show a still frame that never moves and nothing
+ * would say why. Only a single range is honoured — a multi-range request is
+ * answered with the whole file, which the specification allows and which no
+ * player asks for.
+ */
+function parseRange(header: string | null, size: number): { start: number; end: number } | 'invalid' | null {
+  if (!header) return null;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!match) return null;
+  const [, rawStart, rawEnd] = match;
+  if (rawStart === '' && rawEnd === '') return 'invalid';
+
+  let start: number;
+  let end: number;
+  if (rawStart === '') {
+    // "bytes=-500" is the LAST 500 bytes, not the first.
+    const suffix = Number(rawEnd);
+    if (suffix <= 0) return 'invalid';
+    start = Math.max(0, size - suffix);
+    end = size - 1;
+  } else {
+    start = Number(rawStart);
+    end = rawEnd === '' ? size - 1 : Math.min(Number(rawEnd), size - 1);
+  }
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= size) return 'invalid';
+  return { start, end };
+}
 
 /**
  * Every request runs inside one database connection (see withDatabase), and the
@@ -40,7 +73,8 @@ export const onRequest = defineMiddleware((context, next) => {
   context.locals.preview = preview;
 
   return withDatabase(async () => {
-    const asset = loadAsset(decodeURIComponent(context.url.pathname));
+    const path = decodeURIComponent(context.url.pathname);
+    const asset = loadAssetMeta(path);
     if (!asset) {
       const response = await next();
       /* WARNING: A PREVIEW IS NEVER CACHED AND NEVER INDEXED. It shows work that
@@ -54,12 +88,15 @@ export const onRequest = defineMiddleware((context, next) => {
       return response;
     }
 
-    const etag = `W/"${asset.updated.toString(36)}-${asset.bytes.byteLength.toString(36)}"`;
+    const etag = `W/"${asset.updated.toString(36)}-${asset.size.toString(36)}"`;
     const headers: Record<string, string> = {
       'Content-Type': asset.mime,
       'Cache-Control': preview ? 'no-store' : 'no-cache',
       ETag: etag,
       'Last-Modified': new Date(asset.updated).toUTCString(),
+      /* Says a seek is possible. A player that does not see this downloads the
+         whole file before it will let anyone scrub it. */
+      'Accept-Ranges': 'bytes',
       /* The stored type is the only type. Without this a browser may sniff an
          upload into something executable and run it on this origin. */
       'X-Content-Type-Options': 'nosniff',
@@ -79,9 +116,40 @@ export const onRequest = defineMiddleware((context, next) => {
       return new Response(null, { status: 304, headers });
     }
 
-    return new Response(asset.bytes, {
+    /* `If-Range` guards a resumed download: if the file changed since the
+       player started, the pieces it already has are stale and it must be given
+       the whole thing rather than a chunk of a different file. */
+    const ifRange = context.request.headers.get('if-range');
+    const range =
+      ifRange && ifRange !== etag ? null : parseRange(context.request.headers.get('range'), asset.size);
+
+    if (range === 'invalid') {
+      return new Response(null, {
+        status: 416,
+        headers: { ...headers, 'Content-Range': `bytes */${asset.size}` },
+      });
+    }
+
+    if (range) {
+      const length = range.end - range.start + 1;
+      const chunk = loadAssetSlice(path, range.start, length);
+      if (chunk) {
+        return new Response(chunk, {
+          status: 206,
+          headers: {
+            ...headers,
+            'Content-Range': `bytes ${range.start}-${range.end}/${asset.size}`,
+            'Content-Length': String(chunk.byteLength),
+          },
+        });
+      }
+    }
+
+    const bytes = loadAssetBytes(path);
+    if (!bytes) return new Response(null, { status: 404, headers });
+    return new Response(bytes, {
       status: 200,
-      headers: { ...headers, 'Content-Length': String(asset.bytes.byteLength) },
+      headers: { ...headers, 'Content-Length': String(bytes.byteLength) },
     });
   }, preview);
 });

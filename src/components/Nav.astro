@@ -1,6 +1,7 @@
 ---
 import Logo from './Logo.astro';
-import { useTranslations, localePath, type Locale } from '../i18n/ui';
+import { useTranslations, localePath, type Locale, type UIKey } from '../i18n/ui';
+import { loadSectionOrder, SECTION_ANCHOR, type SectionKey } from '../db';
 
 interface Props {
   locale: Locale;
@@ -12,12 +13,24 @@ const t = useTranslations(locale);
 // The switcher shows the CURRENT language; clicking it goes to the other one.
 const langLabel = locale.toUpperCase();
 
-const links = [
-  { href: localePath(locale, '/#projeler'), label: t('nav.projects') },
-  { href: localePath(locale, '/#hizmetler'), label: t('nav.services') },
-  { href: localePath(locale, '/#hakkimizda'), label: t('nav.about') },
-  { href: localePath(locale, '/#iletisim'), label: t('nav.contact') },
-];
+/* WARNING: THE MENU FOLLOWS THE PAGE, NOT A SECOND LIST. The editor can restack
+   the home page (db/sectionOrder.ts); a menu written in its own fixed order
+   would send someone to the fourth heading while its link sits second. Only the
+   sections that HAVE a nav string appear - Referanslar has none, which is why it
+   is a section you scroll to rather than a menu item. */
+const NAV_KEY: Partial<Record<SectionKey, UIKey>> = {
+  projects: 'nav.projects',
+  services: 'nav.services',
+  about: 'nav.about',
+  contact: 'nav.contact',
+};
+const links = loadSectionOrder()
+  .map((k) => ({ k, key: NAV_KEY[k] }))
+  .filter((x): x is { k: SectionKey; key: UIKey } => !!x.key)
+  .map(({ k, key }) => ({
+    href: localePath(locale, '/#' + SECTION_ANCHOR[k]),
+    label: t(key),
+  }));
 ---
 
 <header class="nav" id="site-nav">
@@ -87,9 +100,12 @@ const links = [
   .nav-links a,
   .nav-lang {
     font-family: var(--font-display);
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
+    font-size: var(--t-nav);
+    /* 700, like the reference: at this size weight is what separates a menu
+       from a caption. Tracking is the other half - 0.14em was giving back in
+       lightness what the larger size bought, so it is cut to 0.09em. */
+    font-weight: 700;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     position: relative;
   }
@@ -132,8 +148,9 @@ const links = [
     align-items: center;
     gap: 0.6rem;
     font-family: var(--font-display);
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
+    font-size: var(--t-nav);
+    font-weight: 700;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
   }
 

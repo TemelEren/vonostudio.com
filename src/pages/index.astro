@@ -7,10 +7,23 @@ import About from '../components/About.astro';
 import References from '../components/References.astro';
 import Contact from '../components/Contact.astro';
 import { useTranslations, localePath } from '../i18n/ui';
+import { loadSectionOrder, type SectionKey } from '../db';
 import { homeSchema } from '../seo/pages';
 
 const locale = 'tr' as const;
 const t = useTranslations(locale);
+
+/* The stacking order is the editor's (db/sectionOrder.ts). Intro is not in the
+   list: it is the page opening - the logo animation ends by flying into the nav
+   - so it has nowhere else to be. */
+const BOLUM: Record<SectionKey, typeof Projects> = {
+  projects: Projects,
+  services: Services,
+  about: About,
+  references: References,
+  contact: Contact,
+};
+const sira = loadSectionOrder();
 ---
 
 <Base
@@ -21,9 +34,10 @@ const t = useTranslations(locale);
   schema={homeSchema(Astro.site!, locale)}
 >
   <Intro />
-  <Projects locale={locale} />
-  <Services locale={locale} />
-  <About locale={locale} />
-  <References locale={locale} />
-  <Contact locale={locale} />
+  {
+    sira.map((k) => {
+      const Bolum = BOLUM[k];
+      return <Bolum locale={locale} />;
+    })
+  }
 </Base>

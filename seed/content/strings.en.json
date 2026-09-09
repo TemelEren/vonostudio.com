@@ -1,13 +1,13 @@
 {
   "meta.title": "Vono Design Studio Architecture & Construction | Interior Design",
   "meta.description": "Vono Architectural Design Studio is an award-winning practice producing innovative and sustainable solutions in architecture, interior design, urban design, graphic design and brand identity.",
-
   "nav.projects": "Projects",
   "nav.services": "Our Services",
   "nav.about": "About Us",
   "nav.contact": "Contact",
   "nav.menu": "Menu",
   "projects.title": "Our Works",
+  "projects.all": "All",
   "services.title": "Our Services",
   "about.title": "About Us",
   "about.vision": "Vision",
@@ -22,19 +22,21 @@
   "contact.address.label": "Address",
   "contact.phone.label": "Phone",
   "contact.social.label": "Social",
-
+  "contact.mail.subject": "Project enquiry",
+  "contact.mail.body": "Hello,\n\nI would like to talk about a project.\n\nProject type: \nLocation: \nApproximate area: \nStart: \n\nThank you,",
+  "contact.call": "Call",
+  "contact.whatsapp": "WhatsApp",
+  "contact.directions": "Directions",
+  "contact.map.title": "Office location — map",
   "footer.rights": "All rights reserved.",
-
   "notfound.title": "Page not found",
   "notfound.description": "The page you are looking for may have moved, or never existed.",
   "notfound.home": "Back to home",
-
   "project.back": "All projects",
   "project.year": "Year",
   "project.location": "Location",
   "project.area": "Area",
   "project.status": "Status",
   "project.category": "Category",
-  "project.prev": "Previous project",
-  "project.next": "Next project"
+  "project.sound": "Watch with sound"
 }

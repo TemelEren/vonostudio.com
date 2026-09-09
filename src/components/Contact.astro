@@ -10,7 +10,63 @@ const t = useTranslations(locale);
 const settings = loadSettings();
 
 const email = settings.email;
+const phone = settings.phone;
+const address = settings.address[locale];
 const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
+
+/* WARNING: THESE KEYS ARE NEWER THAN EVERY EXISTING DATABASE. Interface strings
+   are a compile-time type taken from the seed, so t() is type-safe, but an
+   installation that predates this section has no row for them and t() hands
+   back the key itself - a button reading "contact.call". The editor's text wins
+   the moment they add it (Web Sitesi -> Arayüz Metinleri); until then the
+   visitor reads a word rather than an identifier. Same guard as projects.all. */
+const metin = (key: Parameters<typeof t>[0], tr: string, en: string) => {
+  const ham = t(key);
+  return ham === key ? (locale === 'tr' ? tr : en) : ham;
+};
+
+const konu = metin('contact.mail.subject', 'Proje talebi', 'Project enquiry');
+const govde = metin(
+  'contact.mail.body',
+  'Merhaba,\n\nBir proje için görüşmek istiyorum.\n\nProje türü: \nKonum: \nYaklaşık alan: \nBaşlangıç: \n\nTeşekkürler,',
+  'Hello,\n\nI would like to talk about a project.\n\nProject type: \nLocation: \nApproximate area: \nStart: \n\nThank you,',
+);
+
+/* The mail link carries the subject and a short scaffold, so the visitor writes
+   two lines instead of composing from nothing - that is the "quick shortcut"
+   this block is for. Both are editable copy, not code: an office changes the
+   wording of its own enquiries far more often than it changes its markup. */
+const mailHref =
+  `mailto:${email}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`;
+
+/* WARNING: TWO DIFFERENT SHAPES OF THE SAME NUMBER. `tel:` keeps the plus and
+   the digits; wa.me takes DIGITS ONLY and reads them as a full international
+   number. */
+const telHref = phone ? `tel:${phone.replace(/[^\d+]/g, '')}` : '';
+/* WARNING: NO COUNTRY CODE IS INVENTED. wa.me has no notion of "local number" -
+   given 5550356655 it would ring someone in another country. A number that is
+   not written in international form gets no WhatsApp link at all; the call
+   link still works, and the editor fixes the number when they want the second
+   button. */
+const waRakam = phone.trim().startsWith('+') ? phone.replace(/\D/g, '') : '';
+const waHref = waRakam
+  ? `https://wa.me/${waRakam}?text=${encodeURIComponent(konu)}`
+  : '';
+
+/* Documented, cross-platform and keyless: the maps URL scheme opens the native
+   app on a phone and the web map on a desktop. */
+const yolHref = address
+  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+  : '';
+/* WARNING: THE MAP IS DRIVEN BY THE ADDRESS, NOT BY COORDINATES. There are no
+   coordinates in the content database and guessing a lat/lng would be inventing
+   data that looks authoritative. This embed takes the address string that the
+   editor already maintains - measured against the live address, it lands on
+   Poligon Cd. Keyless, so nothing to configure and nothing to expire; if the
+   pin ever drifts, the fix is the address field. */
+const haritaSrc = address
+  ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
+  : '';
 ---
 
 <section class="section" id="iletisim">
@@ -19,22 +75,48 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
       <h2 class="section-title">{t('contact.title')}</h2>
     </div>
 
-    <a class="big-mail" href={`mailto:${email}`} data-reveal>
+    <a class="big-mail" href={mailHref} data-reveal>
       <span class="cta">{t('contact.cta')}</span>
-      <span class="mail">{email}</span>
-      <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path d="M7 17 17 7M9 7h8v8" />
-      </svg>
+      <span class="mail-satir">
+        <span class="mail">{email}</span>
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8" />
+        </svg>
+      </span>
     </a>
 
     <div class="cols">
       <div data-reveal>
         <h4>{t('contact.address.label')}</h4>
-        <p>{settings.address[locale]}</p>
+        {
+          yolHref ? (
+            <a class="adres" href={yolHref} target="_blank" rel="noopener noreferrer">
+              <span>{address}</span>
+              <span class="eylem">
+                {metin('contact.directions', 'Yol tarifi', 'Directions')}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                  <path d="M7 17 17 7M9 7h8v8" />
+                </svg>
+              </span>
+            </a>
+          ) : (
+            <p>{address}</p>
+          )
+        }
       </div>
       <div data-reveal>
         <h4>{t('contact.phone.label')}</h4>
-        <p>{settings.phone}</p>
+        <p class="tel">{phone}</p>
+        <div class="dugmeler">
+          {telHref && <a class="dugme" href={telHref}>{metin('contact.call', 'Ara', 'Call')}</a>}
+          {
+            waHref && (
+              <a class="dugme" href={waHref} target="_blank" rel="noopener noreferrer">
+                {metin('contact.whatsapp', 'WhatsApp', 'WhatsApp')}
+              </a>
+            )
+          }
+        </div>
       </div>
       <div data-reveal>
         <h4>{t('contact.social.label')}</h4>
@@ -52,6 +134,19 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
       </div>
     </div>
   </div>
+
+  {
+    haritaSrc && (
+      <div class="harita" data-reveal>
+        <iframe
+          src={haritaSrc}
+          title={metin('contact.map.title', 'Ofis konumu — harita', 'Office location — map')}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        />
+      </div>
+    )
+  }
 </section>
 
 <style>
@@ -65,9 +160,16 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
     position: relative;
   }
 
-  .cta {
+  /* WARNING: ONE SIZE FOR ONE ROLE. Measured before: the small caps above the
+     mail address were 12.8px and the column headings 12px - close enough that
+     nobody would call it a hierarchy, far enough that the eye reads it as a
+     wobble. They say the same kind of thing, so they are one token now
+     (styles/global.css). */
+  .cta,
+  .cols h4 {
     font-family: var(--font-display);
-    font-size: 0.8rem;
+    font-size: var(--t-label);
+    font-weight: 500;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--muted);
@@ -75,7 +177,7 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
 
   .mail {
     font-family: var(--font-display);
-    font-size: clamp(1.5rem, 4.6vw, 4rem);
+    font-size: var(--t-display);
     font-weight: 500;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -91,10 +193,19 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
     background-size: 100% 2px;
   }
 
+  /* The arrow belongs to the address, so the two wrap as one thing. Loose in
+     the row it dropped to a line of its own on a phone (measured at 390px) and
+     read as a stray mark rather than as "this opens something". */
+  .mail-satir {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+  }
+
   .arrow {
     width: clamp(1.4rem, 3vw, 2.4rem);
     height: auto;
-    align-self: center;
+    flex: none;
     transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
   }
 
@@ -110,10 +221,6 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
   }
 
   .cols h4 {
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
     margin-bottom: 0.8rem;
   }
 
@@ -132,9 +239,122 @@ const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
     border-color: var(--ink);
   }
 
+  /* The address IS the link - a separate "open in maps" line underneath would
+     make the reader choose between two things that go to the same place. */
+  .adres {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+
+  .adres > span:first-child {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.25s ease;
+  }
+
+  .adres:hover > span:first-child {
+    border-color: var(--ink);
+  }
+
+  .eylem {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .eylem svg {
+    width: 0.85em;
+    height: 0.85em;
+    transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .adres:hover .eylem svg {
+    transform: translate(0.15rem, -0.15rem);
+  }
+
+  /* The number stays plain text and the two buttons carry the actions: the
+     visitor is asked which one they want rather than having the page decide
+     that tapping a phone number means placing a call. */
+  .tel {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dugmeler {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+  }
+
+  /* 44px is the floor a finger needs; at this type size the box came out 39px
+     tall, so the height is stated rather than left to the font's metrics. */
+  .dugme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid var(--line);
+    transition:
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .dugme:hover,
+  .dugme:focus-visible {
+    border-color: var(--ink);
+  }
+
+  /* WARNING: BLACK AND WHITE IS A FILTER, NOT A MAP STYLE. A styled tile layer
+     needs an API key and a billing account; `grayscale` costs nothing, works on
+     whatever the provider draws, and cannot fall out of date. The contrast nudge
+     is there because a desaturated road map goes flat.
+
+     Full-bleed on purpose: it sits outside .container so it reads as the ground
+     the page ends on rather than one more card in the column. `lazy` keeps the
+     third-party frame - and its cookies - out of the page until the visitor has
+     scrolled this far. */
+  .harita {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    background: var(--soft);
+    line-height: 0;
+  }
+
+  .harita iframe {
+    width: 100%;
+    height: clamp(18rem, 38vh, 30rem);
+    border: 0;
+    display: block;
+    filter: grayscale(1) contrast(1.05);
+  }
+
   @media (max-width: 700px) {
     .cols {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mail,
+    .arrow,
+    .eylem svg,
+    .dugme,
+    .adres > span:first-child {
+      transition: none;
+    }
+
+    .big-mail:hover .arrow,
+    .adres:hover .eylem svg {
+      transform: none;
     }
   }
 </style>

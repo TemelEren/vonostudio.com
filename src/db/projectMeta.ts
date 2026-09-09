@@ -107,3 +107,27 @@ export function projectCardLine(project: Project, locale: Locale): string {
     .slice(0, 3)
     .join(' · ');
 }
+
+/**
+ * The caption over a project tile: "Kategori · Yıl".
+ *
+ * WARNING: SHORTER THAN THE CARD LINE ON PURPOSE. The tile caption sits ON the
+ * photograph in small caps, so every extra word costs legibility - and the
+ * location earns none of it here: nine of the twelve projects read "İstanbul",
+ * so repeating it down a grid is noise. The full strip is on the detail page.
+ *
+ * Falls back the same way projectCardLine does: a project whose keyed rows were
+ * renamed away still says something rather than showing a bare title.
+ */
+export function projectGridLine(project: Project, locale: Locale): string {
+  const line = [metaText(project, 'category', locale), metaText(project, 'year', locale)]
+    .filter(Boolean)
+    .join(' · ');
+  if (line) return line;
+
+  return resolveProjectMeta(project)
+    .map((row) => pick(row.value, locale).trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' · ');
+}

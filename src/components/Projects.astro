@@ -1,5 +1,12 @@
 ---
-import { loadProjects, projectCardLine } from '../db';
+import {
+  categoryLabel,
+  loadProjectCategories,
+  loadProjects,
+  projectCategoryKeys,
+  projectGridLine,
+  usableCategories,
+} from '../db';
 import { useTranslations, type Locale } from '../i18n/ui';
 import { projectPath } from '../seo/pages';
 
@@ -8,25 +15,255 @@ interface Props {
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
-/* The subtitle is built from the meta strip by KEY, so it survives a renamed
-   row and simply drops a part whose row was removed (db/projectMeta.ts). */
-const projects = loadProjects().map((p) => ({ ...p, line: projectCardLine(p, locale) }));
+const rows = loadProjects();
+/* The caption is built from the meta strip by KEY, so it survives a renamed row
+   and simply drops a part whose row was removed (db/projectMeta.ts). */
+const projects = rows.map((p) => ({
+  ...p,
+  line: projectGridLine(p, locale),
+  cats: projectCategoryKeys(p),
+}));
+
+/* The filter row belongs to the editor: it exists only because they defined
+   categories and put projects in them (db/projectCategories.ts). */
+const usable = usableCategories(loadProjectCategories(), rows);
+/* WARNING: A FILTER THAT CANNOT NARROW ANYTHING IS NOISE. One category holding
+   every project makes "all" and that category the same grid, so the row earns
+   its space only when some choice actually changes what is shown. */
+const showFilters =
+  usable.length >= 2 || (usable.length === 1 && usable[0].count < rows.length);
+
+/* WARNING: THIS KEY IS NEWER THAN MOST DATABASES. Interface strings are a
+   compile-time type taken from the seed, but an installation that predates the
+   filter row has no `projects.all` value and t() hands back the key itself - a
+   button reading "projects.all". The editor's text wins the moment they add it;
+   until then the visitor sees a word rather than an identifier. */
+const allRaw = t('projects.all');
+const allLabel = allRaw === 'projects.all' ? (locale === 'tr' ? 'Hepsi' : 'All') : allRaw;
+
+/* Presentation, so it stays out of the URL: the grid is one section of the home
+   page and a query string would reload it. Every tile stays in the DOM - hiding
+   is an attribute, so nothing is rebuilt and decoded images are kept.
+
+   ---- THE TRANSITION ----
+   Switching used to be a single frame: nine tiles vanished and three appeared
+   with nothing in between, which reads as a glitch rather than as a change. The
+   ones leaving now play out, the grid settles, and the ones arriving play in.
+
+   WARNING: THE MOVEMENT IS A CSS ANIMATION, NOT A TRANSITION, AND THAT IS THE
+   WHOLE TRICK. Every tile also carries `data-reveal`, whose `.revealed` rule
+   pins `opacity: 1; transform: none` at a specificity this component cannot
+   beat without an `!important` or a selector arms race - a transition-based
+   fade simply would not move. Animations sit ABOVE normal declarations in the
+   cascade, so they win while they run and hand the element straight back
+   afterwards. It also leaves the scroll reveal its own 0.9s feel.
+
+   WARNING: THE SCRIPT KNOWS NO ANIMATION NAMES. Which one runs is
+   `<html data-anim>`, written from the theme (db/theme.ts) and therefore right
+   on the first paint; the script only says "this one is leaving, that one is
+   arriving". A new variant is a stylesheet change plus a catalogue entry -
+   never a change here.
+
+   ---- THE TILES THAT STAY ----
+   WARNING: FADING THE NEWCOMERS IS NOT ENOUGH, AND THE TWO DIRECTIONS ARE NOT
+   SYMMETRIC. Choosing a category reads well because something happens first:
+   eight tiles fade out, and only then does the grid close up. Pressing "all"
+   had no such beat - the layout snapped to twelve places in the SAME FRAME as
+   the click, so the four tiles already on screen teleported and the eight
+   arriving ones faded in behind that jump. Measured: the fade was running
+   correctly (opacity 0.00 -> 0.50 -> 0.94 -> 1.00 across 420ms) and it still
+   read as "no animation", because the loudest thing on screen - four tiles
+   changing place - was not animated at all.
+
+   So the survivors are moved rather than teleported: their positions are read
+   before the change and again after it, and the difference is played back as a
+   transform (the FLIP technique). It costs one extra measure pass over at most
+   a dozen elements and makes BOTH directions feel the same.
+
+   WARNING: THE THREE GROUPS MUST NOT OVERLAP. A tile that is arriving owns its
+   transform through `vf-in`, and one that is leaving through `vf-out`; only a
+   tile that is in both grids gets a FLIP. Overlap would put two animations on
+   one property and the later one would win at a random moment. */
+const filterScript = [
+  '(function () {',
+  "  var root = document.getElementById('projeler');",
+  '  if (!root) return;',
+  "  var buttons = root.querySelectorAll('.filter');",
+  "  var tiles = root.querySelectorAll('.project');",
+  '  var doc = document.documentElement;',
+  '  // Someone who asked the system for less movement gets the old single frame.',
+  '  var still =',
+  "    doc.getAttribute('data-anim') === 'yok' ||",
+  "    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);",
+  '  // One number covers every variant; the stylesheet owns the shapes.',
+  '  // WARNING: THE UNIT IS NOT ALWAYS ms. A minifier rewrites 420ms as',
+  '  // .42s - measured in a production build - so reading the number and',
+  '  // assuming milliseconds turned a 420ms wait into 0.42ms and made the',
+  '  // outgoing tiles vanish rather than ease out. Dev was fine; only the',
+  '  // built site was wrong.',
+  '  function span() {',
+  "    var raw = String(getComputedStyle(doc).getPropertyValue('--filter-ms')).trim();",
+  '    var v = parseFloat(raw);',
+  '    if (!(v > 0)) return 420;',
+  "    return /ms$/.test(raw) ? v : v * 1000;",
+  '  }',
+  '  function fits(tile, key) {',
+  "    return key === '' || (tile.getAttribute('data-cats') || '').split(' ').indexOf(key) >= 0;",
+  '  }',
+  '  // A click during a change cancels the one in flight: without this guard a',
+  '  // stale timer would hide a tile the newer choice had just brought back.',
+  '  var run = 0;',
+  '  var timer = 0;',
+  '  function apply(key) {',
+  '    for (var j = 0; j < buttons.length; j++) {',
+  "      var on = (buttons[j].getAttribute('data-cat') || '') === key;",
+  "      buttons[j].classList.toggle('is-on', on);",
+  "      buttons[j].setAttribute('aria-pressed', on ? 'true' : 'false');",
+  '    }',
+  '    var mine = ++run;',
+  '    if (timer) { clearTimeout(timer); timer = 0; }',
+  '    var i, t;',
+  '    for (i = 0; i < tiles.length; i++) {',
+  "      tiles[i].classList.remove('is-out', 'is-in');",
+  "      tiles[i].style.removeProperty('--d');",
+  '    }',
+  '    if (still) {',
+  '      for (i = 0; i < tiles.length; i++) tiles[i].hidden = !fits(tiles[i], key);',
+  '      return;',
+  '    }',
+  '    var going = [];',
+  '    var coming = [];',
+  '    var staying = [];',
+  '    for (i = 0; i < tiles.length; i++) {',
+  '      t = tiles[i];',
+  '      var want = fits(t, key);',
+  '      if (want && t.hidden) coming.push(t);',
+  '      else if (!want && !t.hidden) going.push(t);',
+  '      // Only a tile that is in both grids is moved, and only once it has',
+  '      // been revealed - an unrevealed one is transparent and its transform',
+  '      // belongs to the reveal, not to us.',
+  "      else if (want && !t.hidden && t.classList.contains('revealed')) staying.push(t);",
+  '    }',
+  '    if (!going.length && !coming.length) return;',
+  '    // Read BEFORE anything moves. Any transform still in flight is included',
+  '    // on purpose: starting from where a tile actually IS keeps a second',
+  '    // click continuous instead of snapping first.',
+  '    var from = [];',
+  '    for (i = 0; i < staying.length; i++) {',
+  '      var fr = staying[i].getBoundingClientRect();',
+  '      from.push({ x: fr.left, y: fr.top });',
+  '    }',
+  '    // Restart a class that may have been removed in this very frame.',
+  '    void root.offsetWidth;',
+  "    for (i = 0; i < going.length; i++) going[i].classList.add('is-out');",
+  '    var wait = going.length ? Math.round(span() * 0.55) : 0;',
+  '    var reveal = function () {',
+  '      if (mine !== run) return;',
+  '      for (var k = 0; k < going.length; k++) {',
+  '        going[k].hidden = true;',
+  "        going[k].classList.remove('is-out');",
+  '      }',
+  '      var order = 0;',
+  '      for (var m = 0; m < tiles.length; m++) {',
+  '        var tile = tiles[m];',
+  '        if (!fits(tile, key)) continue;',
+  '        // The wave runs over what is VISIBLE, in document order, so it reads',
+  '        // left to right whichever tiles happened to be hidden before.',
+  '        if (coming.indexOf(tile) >= 0) {',
+  '          tile.hidden = false;',
+  "          tile.style.setProperty('--d', String(order));",
+  "          tile.classList.add('is-in');",
+  '        }',
+  '        order++;',
+  '      }',
+  '      // ---- the survivors ----',
+  '      // Clear first, measure second: the new reading has to be the plain',
+  '      // layout position, not the old transform still sitting on it.',
+  '      var k;',
+  '      for (k = 0; k < staying.length; k++) {',
+  "        staying[k].style.transition = '';",
+  "        staying[k].style.transform = '';",
+  '      }',
+  '      var moved = [];',
+  '      for (k = 0; k < staying.length; k++) {',
+  '        var box = staying[k].getBoundingClientRect();',
+  '        var dx = from[k].x - box.left;',
+  '        var dy = from[k].y - box.top;',
+  '        // Half a pixel is not a move; transforming everything would put a',
+  '        // compositing layer under every tile for nothing.',
+  '        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;',
+  "        staying[k].style.transition = 'none';",
+  "        staying[k].style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';",
+  '        moved.push(staying[k]);',
+  '      }',
+  '      if (moved.length) {',
+  '        // Flush the starting offsets, or the browser sees only the end',
+  '        // state and there is nothing to animate.',
+  '        void root.offsetWidth;',
+  '        var ms = span();',
+  '        for (k = 0; k < moved.length; k++) {',
+  "          moved[k].style.transition = 'transform ' + ms + 'ms cubic-bezier(0.22, 1, 0.36, 1)';",
+  "          moved[k].style.transform = '';",
+  '        }',
+  '        // Inline styles are cleaned up so a later hover or reveal is not',
+  '        // left transitioning against a rule it does not know about.',
+  '        setTimeout(function () {',
+  '          if (mine !== run) return;',
+  '          for (var z = 0; z < moved.length; z++) {',
+  "            moved[z].style.transition = '';",
+  "            moved[z].style.transform = '';",
+  '          }',
+  '        }, ms + 60);',
+  '      }',
+  '      timer = 0;',
+  '    };',
+  '    if (wait) timer = setTimeout(reveal, wait);',
+  '    else reveal();',
+  '  }',
+  "  root.addEventListener('click', function (e) {",
+  "    var b = e.target && e.target.closest ? e.target.closest('.filter') : null;",
+  "    if (b && root.contains(b)) apply(b.getAttribute('data-cat') || '');",
+  '  });',
+  '  // `both` holds the end state, so the class has to come off once it is',
+  '  // over, or the tile would keep an animated value it no longer needs.',
+  "  root.addEventListener('animationend', function (e) {",
+  "    if (e.target && e.target.classList) e.target.classList.remove('is-in');",
+  '  });',
+  '})();',
+].join('\n');
 ---
 
 <section class="section" id="projeler">
   <div class="container">
     <div class="section-head" data-reveal>
       <h2 class="section-title">{t('projects.title')}</h2>
+      {
+        showFilters && (
+          <div class="filters" role="group" aria-label={t('projects.title')}>
+            <button type="button" class="filter is-on" data-cat="" aria-pressed="true">
+              {allLabel}
+            </button>
+            {usable.map((c) => (
+              <button type="button" class="filter" data-cat={c.key} aria-pressed="false">
+                {categoryLabel(c, locale)}
+              </button>
+            ))}
+          </div>
+        )
+      }
     </div>
 
     <div class="grid">
       {
         projects.map((p) => (
-          <a class="project" href={projectPath(locale, p.slug)} data-reveal>
-            <figure>
-              <img src={p.cover} alt={p.title} loading="lazy" decoding="async" />
-            </figure>
-            <div class="meta">
+          <a
+            class="project"
+            href={projectPath(locale, p.slug)}
+            data-reveal
+            data-cats={p.cats.join(' ')}
+          >
+            <img src={p.cover} alt={p.title} loading="lazy" decoding="async" />
+            <div class="cap">
               <h3>{p.title}</h3>
               {p.line && <span>{p.line}</span>}
             </div>
@@ -37,98 +274,301 @@ const projects = loadProjects().map((p) => ({ ...p, line: projectCardLine(p, loc
   </div>
 </section>
 
+{showFilters && <script is:inline set:html={filterScript} />}
+
 <style>
+  /* The old layout leaned on its own offsets for air; a uniform grid has none,
+     so the title needs its own. Scoped on purpose - the other sections were not
+     asked to change. */
+  .section-head {
+    margin-bottom: clamp(2.25rem, 4.5vw, 3.75rem);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    flex-wrap: wrap;
+  }
+
+  /* Small caps on the title's baseline: the row reads as a caption to the
+     heading rather than a second heading competing with it.
+
+     WARNING: FLUSH RIGHT IS NOT THE HEAD'S JOB ALONE. `space-between` only
+     right-aligns the row while it shares a line with the title; the moment the
+     categories are too many or the window too narrow the block wraps to a line
+     of its own, becomes the only item on it, and slides LEFT. Measured with
+     eight categories at 1180px: the row started at the grid's left edge and
+     ended 216px short of its right one. `margin-left: auto` holds the block
+     right on either line, and `flex-end` holds EVERY row of buttons right once
+     the buttons themselves wrap. Neither can push past the grid: both live in
+     the same container, so the right edge is the same one. */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
+    gap: clamp(0.9rem, 2vw, 1.75rem);
+  }
+
+  /* WARNING: NO JAVASCRIPT, NO FILTER ROW. The buttons do nothing without the
+     script, and a control that cannot be worked is worse than none - the site
+     already gates its reveal animations on this class (styles/global.css). */
+  html:not(.js) .filters {
+    display: none;
+  }
+
+  .filter {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-size: clamp(0.7rem, 0.82vw, 0.78rem);
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+
+  .filter:hover,
+  .filter:focus-visible {
+    color: var(--ink);
+  }
+
+  /* The state is carried by colour AND weight, not colour alone: a single hue
+     shift is the first thing lost to a colour-vision difference. */
+  .filter.is-on {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .filter:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+  }
+
+  /* One rhythm, no exceptions: every tile is the same size and the gaps are
+     tight, so the eye reads the WORK rather than the layout. The column count
+     is a single custom property - the tile does not care how many there are. */
   .grid {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 3vw, 3rem);
+    grid-template-columns: repeat(var(--tile-cols, 3), minmax(0, 1fr));
+    gap: clamp(0.55rem, 1vw, 1.05rem);
+  }
+
+  /* WARNING: `display` HERE OUTRANKS THE `hidden` ATTRIBUTE. The filter hides a
+     tile by setting `el.hidden`, which the browser honours through its own
+     `[hidden] { display: none }` - but that rule lives in the USER-AGENT sheet
+     and any author `display` beats it. Without the rule below the script ran,
+     the attribute landed on nine tiles and the grid did not change by a pixel:
+     the filter looked dead. Measured: hidden attribute on 9 of 12, computed
+     display "block" on all 12. */
+  .project[hidden] {
+    display: none;
+  }
+
+  /* ---- The filter's movement ----
+     ONE PAIR OF KEYFRAMES, FIVE LOOKS. Each variant only sets the four custom
+     properties the keyframes read, so a new one is a three-line block rather
+     than another pair of @keyframes to keep in step. The properties are static
+     while an animation runs - they are substituted when the keyframe is
+     resolved, not interpolated - which is exactly what is wanted here.
+
+     WARNING: `transform: none` IS THE IDENTITY, so a run that starts at
+     `translateY(18px) scale(0.94)` still interpolates cleanly to it. Writing
+     the same functions with zero arguments on the other end would be equivalent
+     but has to be kept in sync by hand. */
+  @keyframes vf-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--vf-y, 0)) scale(var(--vf-s, 1));
+      filter: blur(var(--vf-b, 0));
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+
+  @keyframes vf-out {
+    from {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(var(--vf-oy, 0)) scale(var(--vf-os, 1));
+      filter: blur(var(--vf-ob, 0));
+    }
+  }
+
+  /* Leaving is deliberately quicker than arriving: the grid has to settle
+     before the new tiles start, and a slow exit reads as hesitation. */
+  .project.is-out {
+    animation: vf-out calc(var(--filter-ms) * 0.55) cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+  }
+
+  .project.is-in {
+    animation: vf-in var(--filter-ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* `fade` needs no properties at all - it is the bare keyframes - so it is
+     also what an unknown key lands on. */
+  :global(html[data-anim='fade-up']) .project,
+  :global(html[data-anim='stagger']) .project {
+    --vf-y: 18px;
+    --vf-oy: -14px;
+  }
+
+  :global(html[data-anim='scale']) .project {
+    --vf-s: 0.94;
+    --vf-os: 0.96;
+  }
+
+  :global(html[data-anim='blur']) .project {
+    --vf-b: 10px;
+    --vf-ob: 8px;
+  }
+
+  /* The wave. `--d` is the tile's place among the VISIBLE ones, set by the
+     script; `both` holds the tile invisible through its own delay, so nothing
+     flashes before its turn. Capped, because a category with twenty projects
+     would otherwise keep the last one waiting a second and a half. */
+  :global(html[data-anim='stagger']) .project.is-in {
+    animation-delay: calc(min(var(--d, 0), 11) * 55ms);
   }
 
   .project {
     display: block;
-  }
-
-  /* Alternating editorial layout: wide 4:3 next to tall 3:4, offset vertically. */
-  .project:nth-child(odd) {
-    grid-column: span 7;
-  }
-
-  .project:nth-child(even) {
-    grid-column: span 5;
-    margin-top: clamp(3rem, 8vw, 7rem);
-  }
-
-  .project:nth-child(odd) figure {
-    aspect-ratio: 4 / 3;
-  }
-
-  .project:nth-child(even) figure {
-    aspect-ratio: 3 / 4;
-  }
-
-  figure {
+    position: relative;
     overflow: hidden;
+    /* WARNING: THE CROP IS LANDSCAPE BECAUSE THE PHOTOGRAPHS ARE. Ten of the
+       twelve covers are wider than they are tall (one is 3.29:1); a portrait
+       tile would slice the middle out of them. */
+    aspect-ratio: 4 / 3;
     background: var(--soft);
+    color: #fff;
   }
 
-  figure img {
+  .project img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.8s cubic-bezier(0.25, 1, 0.3, 1);
+    display: block;
+    transform: scale(1.001);
+    transition: transform 0.9s cubic-bezier(0.25, 1, 0.3, 1);
   }
 
-  .project:hover img {
-    transform: scale(1.045);
-  }
-
-  .meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
-    margin-top: 1.1rem;
-  }
-
-  .meta h3 {
-    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
-    position: relative;
-  }
-
-  .meta h3::after {
+  /* WARNING: THE SCRIM IS A MEASUREMENT, NOT A TASTE. White small caps over a
+     photograph is only legible if the pixels under the LETTERS are dark enough,
+     and this practice is bright: renders on white paper, a white marble hall, a
+     neon sign. Measured on all twelve covers (brightest 10% of the pixels under
+     the title): the first attempt scored 1.3-3.9 against a 4.5 AA floor and not
+     one tile passed. Pure white needs ~55% black to reach 4.5, so that is the
+     floor the gradient holds where the TEXT sits - not merely at the bottom
+     edge. The first attempt put the gradient on the caption box, whose
+     strongest end is the bottom; the title sits at its TOP and got the weakest
+     cover. The scrim now belongs to the tile and is already dark where the text
+     begins. */
+  .project::after {
     content: '';
     position: absolute;
-    left: 0;
-    bottom: -0.3rem;
-    width: 100%;
-    height: 1px;
-    background: var(--ink);
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    inset: 48% 0 0 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.68) 0%,
+      rgba(0, 0, 0, 0.58) 40%,
+      rgba(0, 0, 0, 0.27) 68%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    transition: opacity 0.5s ease;
   }
 
-  .project:hover .meta h3::after {
-    transform: scaleX(1);
-    transform-origin: left;
+  .cap {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 1;
+    padding: clamp(0.85rem, 1.6vw, 1.4rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
   }
 
-  .meta span {
-    font-size: 0.8rem;
-    color: var(--muted);
-    text-align: right;
-    flex-shrink: 0;
+  .cap h3 {
+    font-size: clamp(0.76rem, 0.95vw, 0.9rem);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.25;
+    color: #fff;
+    /* Bright interiors leave the scrim little to work with; the shadow is the
+       floor under the worst case, not the everyday look. */
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
   }
 
-  @media (max-width: 800px) {
-    .project:nth-child(odd),
-    .project:nth-child(even) {
-      grid-column: 1 / -1;
-      margin-top: 0;
+  .cap span {
+    font-size: clamp(0.66rem, 0.78vw, 0.74rem);
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.82);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+  }
+
+  .project:hover img,
+  .project:focus-visible img {
+    transform: scale(1.055);
+  }
+
+  .project:hover::after,
+  .project:focus-visible::after {
+    opacity: 1.12;
+  }
+
+  /* Keyboard users need to see where they are; the tile has no border to lean
+     on. */
+  .project:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .grid {
+      --tile-cols: 2;
+    }
+  }
+
+  /* Two columns on a phone would put the caption at ~170px wide, where small
+     caps stop being readable - one column keeps the photograph worth showing. */
+  @media (max-width: 560px) {
+    .grid {
+      --tile-cols: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project img,
+    .project::after,
+    .filter {
+      transition: none;
     }
 
-    .project:nth-child(even) figure {
-      aspect-ratio: 4 / 3;
+    /* The script already skips the classes; this is the belt to that braces, so
+       a tile that somehow carries one still does not move. */
+    .project.is-in,
+    .project.is-out {
+      animation: none;
+    }
+
+    .project:hover img,
+    .project:focus-visible img {
+      transform: none;
     }
   }
 </style>

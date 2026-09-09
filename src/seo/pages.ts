@@ -1,6 +1,6 @@
 // Page-level schema.org nodes, handed to <Base schema={...}>.
 import { breadcrumbSchema, ORG_ID, SITE_ID } from './schema';
-import { loadProjects, loadSettings, metaText, type Project } from '../db';
+import { loadProjects, loadSettings, metaText, resolveProjectMedia, type Project } from '../db';
 import { localePath, useTranslations, type Locale } from '../i18n/ui';
 
 const abs = (site: URL, path: string) => new URL(path, site).href;
@@ -61,7 +61,21 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
       url,
       name: project.title,
       description: project.excerpt[locale],
-      image: [project.cover, ...project.gallery].map((src) => abs(site, src)),
+      /* WARNING: `project.gallery` IS NOT READ DIRECTLY. The editor's media list
+         REPLACES it — a project the strip has been saved on has no `gallery`
+         at all, and spreading it threw "not iterable" and took the page down
+         (measured). The cover leads because it is the share image; films are
+         left out because schema.org's `image` wants pictures. */
+      image: [
+        ...new Set([
+          project.cover,
+          ...resolveProjectMedia(project)
+            .filter((m) => m.kind === 'image')
+            .map((m) => m.src),
+        ]),
+      ]
+        .filter(Boolean)
+        .map((src) => abs(site, src)),
       dateCreated: year || undefined,
       genre: category || undefined,
       inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',

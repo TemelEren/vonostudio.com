@@ -1,11 +1,16 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { DatabaseSync } from 'node:sqlite';
 import type { Locale } from '../i18n/locale';
-import type { About, Asset, Project, Reference, Service, Settings, Theme } from './types';
+import type { About, Project, Reference, Service, Settings, Theme } from './types';
 import { resolveTheme } from './theme';
 
 export type * from './types';
 export * from './projectMeta';
+export * from './projectMedia';
+export * from './projectCategories';
+export * from './sectionOrder';
+import { resolveCategories, type ProjectCategory } from './projectCategories';
+import { resolveSectionOrder, type SectionKey } from './sectionOrder';
 export * from './theme';
 
 /** Path to the content database. Overridable so staging/live can differ. */
@@ -132,6 +137,16 @@ function optionalDocument<T>(key: string): T | null {
 /** The editable look. Missing or invalid rows resolve to the original design. */
 export const loadTheme = (): Theme => resolveTheme(optionalDocument<Theme>('theme'));
 
+/* Optional like the theme: no row means no filter row, and the grid renders
+   exactly as it did before categories existed. */
+export const loadProjectCategories = (): ProjectCategory[] =>
+  resolveCategories(optionalDocument<unknown>('projectCategories'));
+
+/* Also optional, and it can only REORDER: a missing or broken row leaves the
+   page in its shipped order rather than dropping a section (db/sectionOrder.ts). */
+export const loadSectionOrder = (): SectionKey[] =>
+  resolveSectionOrder(optionalDocument<unknown>('sectionOrder'));
+
 export const loadSettings = () => document<Settings>('settings');
 export const loadAbout = () => document<About>('about');
 export const loadServices = () => document<Service[]>('services');
@@ -156,10 +171,58 @@ export function loadProject(slug: string): Project | undefined {
   });
 }
 
-/** Looks up a file that used to live under /public, by its URL path. */
-export function loadAsset(path: string): Asset | undefined {
+/** What a stored file is, without reading the file. */
+export interface AssetMeta {
+  path: string;
+  mime: string;
+  /** Bytes on disk. Needed for Content-Length and for range arithmetic. */
+  size: number;
+  updated: number;
+}
+
+/**
+ * Looks up a file that used to live under /public, by its URL path.
+ *
+ * WARNING: THE BYTES ARE NOT READ HERE. A film is tens of megabytes and a
+ * browser asks for it in pieces; materialising the whole blob to answer "does
+ * this exist and how big is it" would pull the entire file into memory for
+ * every seek. The caller asks for the part it is about to send.
+ */
+export function loadAssetMeta(path: string): AssetMeta | undefined {
+  return read(`asset-meta:${path}`, (db) => {
+    const row = db
+      .prepare('SELECT path, mime, length(bytes) AS size, updated FROM assets WHERE path = ?')
+      .get(path) as AssetMeta | undefined;
+    return row;
+  });
+}
+
+/** The whole file. */
+export function loadAssetBytes(path: string): Uint8Array<ArrayBuffer> | undefined {
   return read(`asset:${path}`, (db) => {
-    const row = db.prepare('SELECT path, mime, bytes, updated FROM assets WHERE path = ?').get(path);
-    return row as Asset | undefined;
+    const row = db.prepare('SELECT bytes FROM assets WHERE path = ?').get(path) as
+      | { bytes: Uint8Array<ArrayBuffer> }
+      | undefined;
+    return row?.bytes;
+  });
+}
+
+/**
+ * `length` bytes starting at `start` (0-based).
+ *
+ * WARNING: SQLite's `substr` is 1-BASED. Passing an HTTP range offset straight
+ * through would shift every chunk by one byte — which a picture survives and a
+ * video container does not.
+ */
+export function loadAssetSlice(
+  path: string,
+  start: number,
+  length: number
+): Uint8Array<ArrayBuffer> | undefined {
+  return read(`asset-slice:${path}:${start}:${length}`, (db) => {
+    const row = db
+      .prepare('SELECT substr(bytes, ?, ?) AS chunk FROM assets WHERE path = ?')
+      .get(start + 1, length, path) as { chunk: Uint8Array<ArrayBuffer> } | undefined;
+    return row?.chunk;
   });
 }

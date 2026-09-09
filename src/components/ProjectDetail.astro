@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { loadProjects, pick, resolveProjectMeta, type Project } from '../db';
+import { pick, resolveProjectMedia, resolveProjectMeta, type Project } from '../db';
 import { useTranslations, localePath, type Locale } from '../i18n/ui';
 import { projectPath, projectSchema } from '../seo/pages';
 
@@ -10,11 +10,6 @@ interface Props {
 }
 const { locale, project } = Astro.props;
 const t = useTranslations(locale);
-
-const projects = loadProjects();
-const index = projects.findIndex((p) => p.slug === project.slug);
-const prev = projects[(index - 1 + projects.length) % projects.length];
-const next = projects[(index + 1) % projects.length];
 
 const altUrl = projectPath(locale === 'tr' ? 'en' : 'tr', project.slug);
 
@@ -28,6 +23,18 @@ const meta = resolveProjectMeta(project)
     value: pick(row.value, locale).trim(),
   }))
   .filter((row) => row.value);
+
+/* One ordered list, whatever the project happens to carry: an editor's `media`
+   if it has one, otherwise its cover and gallery (db/projectMedia.ts). */
+const media = resolveProjectMedia(project);
+
+/* WARNING: A NEW KEY IS MISSING FROM EVERY EXISTING DATABASE, and `t()` returns
+   the key itself when a row is absent — the button would read "project.sound".
+   The wording is editable the moment someone adds the row; until then the
+   component says it in the page's own language (same as `projects.all`). */
+const rawSound = t('project.sound');
+const soundLabel =
+  rawSound === 'project.sound' ? (locale === 'tr' ? 'Sesli izle' : 'Watch with sound') : rawSound;
 ---
 
 <Base
@@ -40,7 +47,13 @@ const meta = resolveProjectMeta(project)
   schema={projectSchema(Astro.site!, locale, project)}
 >
   <article class="detail">
-    <div class="container">
+    {/* WARNING: THE TOP BLOCK IS PLAIN FLOW, NOT A FLEX COLUMN. It used to be
+        one, so a single cover could take whatever height the words left over.
+        `.container` carries `margin-inline: auto`, which centres a shrink-to-fit
+        FLEX ITEM — measured at 1440px the title sat at x=441 while the logo
+        directly above it sat at x=58. In normal flow the container is a block,
+        fills the line, and the title starts on the same edge as the logo. */}
+    <div class="container head">
       <a class="back" href={localePath(locale, '/#projeler')}>← {t('project.back')}</a>
 
       <header data-reveal>
@@ -62,54 +75,205 @@ const meta = resolveProjectMeta(project)
       }
     </div>
 
-    <figure class="cover" data-reveal>
-      <img src={project.cover} alt={project.title} fetchpriority="high" decoding="async" />
-    </figure>
-
-    <div class="container body-grid">
-      <div class="body" data-reveal>
-        {project.body[locale].map((p) => <p>{p}</p>)}
-      </div>
-    </div>
-
+    {/* The work, in the order and at the widths the editor chose. */}
     {
-      project.gallery.length > 0 && (
-        <div class="container gallery">
-          {project.gallery.map((src, i) => (
-            <figure data-reveal>
-              <img src={src} alt={`${project.title} — ${i + 1}`} loading="lazy" decoding="async" />
+      media.length > 0 && (
+        <div class="container media">
+          {media.map((m, i) => (
+            <figure
+              class:list={['item', m.kind]}
+              data-wide={m.span >= 2 ? '' : undefined}
+              data-ratio={m.ratio ? '' : undefined}
+              style={`--span:${m.span}${m.ratio ? `;--ratio:${m.ratio}` : ''}`}
+              data-reveal
+            >
+              {m.kind === 'video' ? (
+                <Fragment>
+                  {/* Muted, looping and inline: autoplay with sound is blocked
+                      by every browser and would be rude anyway. Sound arrives
+                      only when someone asks for it — see the script below. */}
+                  <video
+                    src={m.src}
+                    poster={m.poster || undefined}
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                    disablepictureinpicture
+                    aria-label={project.title}
+                  />
+                  <button type="button" class="sound">
+                    <span aria-hidden="true">&#9654;</span> {soundLabel}
+                  </button>
+                </Fragment>
+              ) : (
+                <img
+                  src={m.src}
+                  alt={i === 0 ? project.title : `${project.title} — ${i + 1}`}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchpriority={i === 0 ? 'high' : undefined}
+                  decoding="async"
+                />
+              )}
             </figure>
           ))}
         </div>
       )
     }
 
-    <nav class="pn container" aria-label="Projects">
-      <a href={projectPath(locale, prev.slug)} rel="prev">
-        <span>← {t('project.prev')}</span>
-        <strong>{prev.title}</strong>
-      </a>
-      <a class="next" href={projectPath(locale, next.slug)} rel="next">
-        <span>{t('project.next')} →</span>
-        <strong>{next.title}</strong>
-      </a>
-    </nav>
+    <div class="container body-grid">
+      <div class="body" data-reveal>
+        {project.body[locale].map((p) => <p>{p}</p>)}
+      </div>
+    </div>
   </article>
 </Base>
 
+<script>
+  /* ================= PACKING =================
+     Turns the fine row track into masonry: every figure is told how many tracks
+     it needs, so the next one starts under the SHORTEST column instead of under
+     the tallest item of an imaginary row.
+
+     WARNING: A PICTURE HAS NO HEIGHT UNTIL IT HAS LOADED, and a cached one has
+     it before this script runs. Measuring once at DOMContentLoaded therefore
+     gets some items right and leaves the rest spanning a single 4px track,
+     stacked on top of each other. Every source is watched instead, and the
+     whole strip is re-measured when the window changes width - the columns get
+     narrower, so every height changes with them.
+
+     WARNING: THE CLASS IS ADDED BY THE SCRIPT, NOT THE MARKUP. Until the spans
+     exist the fine row track would collapse the strip; adding it here means the
+     packed layout and the numbers that make it work arrive together. */
+  const strip = document.querySelector<HTMLElement>('.detail .media');
+
+  if (strip) {
+    const items = Array.from(strip.querySelectorAll<HTMLElement>('.item'));
+
+    const pack = () => {
+      const style = getComputedStyle(strip);
+      const unit = parseFloat(style.getPropertyValue('--media-unit')) || 4;
+      const gap = parseFloat(style.rowGap) || 0;
+      for (const item of items) {
+        // Measured on the CONTENT, not the figure: the figure is what we are
+        // about to resize, so reading its own box would feed back on itself.
+        const inner = item.firstElementChild as HTMLElement | null;
+        const h = inner ? inner.getBoundingClientRect().height : item.getBoundingClientRect().height;
+        if (!h) continue;
+        // n tracks hold n*unit plus the (n-1) gaps between them.
+        const n = Math.max(1, Math.ceil((h + gap) / (unit + gap)));
+        item.style.gridRowEnd = 'span ' + n;
+      }
+    };
+
+    strip.classList.add('is-packed');
+    pack();
+
+    // Each picture repacks when it arrives; a broken one must not leave the
+    // strip half measured, so failure repacks too.
+    for (const media of strip.querySelectorAll<HTMLImageElement | HTMLVideoElement>('img, video')) {
+      if (media instanceof HTMLImageElement && media.complete) continue;
+      media.addEventListener('load', pack);
+      media.addEventListener('loadedmetadata', pack);
+      media.addEventListener('error', pack);
+    }
+
+    /* Watching the strip covers a window resize AND a late web font reflowing
+       the page around it; a resize listener would miss the second. Used without
+       a guard on purpose - the film block on this same page already relies on
+       IntersectionObserver, so the two have the same floor. */
+    new ResizeObserver(() => pack()).observe(strip);
+  }
+</script>
+
+<script>
+  /* ================= FILM =================
+     A film on this page behaves like the pictures around it: it starts on its
+     own, silently, and stops when it scrolls away. Sound is a separate,
+     deliberate act — asking for it goes full screen WITH sound, and leaving
+     full screen mutes it again, so scrolling back up never puts audio into a
+     room nobody asked.
+
+     WARNING: `autoplay` ALONE IS THE WRONG TOOL. It starts every film on the
+     page at load — on a project with six of them that is six decoders and six
+     downloads running behind the fold. Tying playback to visibility is also
+     what makes stopping automatic. */
+  const films = Array.from(document.querySelectorAll<HTMLVideoElement>('.detail video'));
+
+  if (films.length) {
+    const badge = (film: HTMLVideoElement) =>
+      film.closest('figure')?.querySelector('button');
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      /* Someone who asked the system for less movement gets a still frame and
+         the normal controls — not a film that starts anyway. */
+      for (const film of films) {
+        film.controls = true;
+        badge(film)?.remove();
+      }
+    } else {
+      const watcher = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const film = entry.target as HTMLVideoElement;
+            // A film taken full screen keeps playing even while the page behind
+            // it reports the element as off screen.
+            if (document.fullscreenElement === film) continue;
+            if (entry.isIntersecting) film.play().catch(() => {});
+            else film.pause();
+          }
+        },
+        { threshold: 0.25 }
+      );
+      for (const film of films) watcher.observe(film);
+    }
+
+    const withSound = (film: HTMLVideoElement) => {
+      film.muted = false;
+      film.controls = true;
+      film.play().catch(() => {});
+      /* iOS gives a <video> no Fullscreen API at all, only its own player. */
+      const ios = film as HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+      if (film.requestFullscreen) film.requestFullscreen().catch(() => {});
+      else if (ios.webkitEnterFullscreen) ios.webkitEnterFullscreen();
+    };
+
+    for (const film of films) {
+      film.addEventListener('click', () => withSound(film));
+      badge(film)?.addEventListener('click', (event) => {
+        event.preventDefault();
+        withSound(film);
+      });
+    }
+
+    /* Leaving full screen puts every film back the way the page found it.
+       Listening on the document rather than per element also covers Escape. */
+    const restore = () => {
+      for (const film of films) {
+        if (document.fullscreenElement === film) continue;
+        film.muted = true;
+        film.controls = false;
+      }
+    };
+    document.addEventListener('fullscreenchange', restore);
+    document.addEventListener('webkitendfullscreen', restore, true);
+  }
+</script>
+
 <style>
-  .detail {
-    padding-top: calc(var(--nav-h) + clamp(2rem, 6vw, 5rem));
+  /* The nav is fixed, so the first block has to clear it itself. */
+  .head {
+    padding-top: calc(var(--nav-h) + clamp(1.75rem, 4vw, 3.25rem));
   }
 
   .back {
     display: inline-block;
     font-family: var(--font-display);
-    font-size: 0.78rem;
+    font-size: var(--t-label);
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+    margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
     transition: color 0.25s ease;
   }
 
@@ -118,26 +282,28 @@ const meta = resolveProjectMeta(project)
   }
 
   h1 {
-    font-size: clamp(2.6rem, 7vw, 5.5rem);
+    font-size: var(--t-hero);
   }
 
   .excerpt {
     max-width: 38rem;
-    margin-top: 1.25rem;
+    margin-top: 1rem;
     font-size: clamp(1.05rem, 1.8vw, 1.3rem);
     color: var(--muted);
   }
 
-  /* The row count is content, not layout: a project may carry three fields or
-     nine. `auto-fit` lays out however many there are and folds them onto more
-     lines as the viewport narrows, so no breakpoint has to know the number.
-     `min()` keeps a single column from overflowing a phone. */
+  /* The facts sit UNDER THE TITLE, where a project's identity is read: year,
+     place, size. The row count is content, not layout — a project may carry
+     three fields or nine — so `auto-fit` lays out however many there are and
+     folds them onto more lines as the viewport narrows, with no breakpoint
+     having to know the number. `min()` keeps a single column from overflowing
+     a phone. */
   .meta {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
     gap: 1.5rem clamp(1.25rem, 2.5vw, 2.5rem);
     border-top: 1px solid var(--line);
-    margin-top: clamp(2.5rem, 5vw, 4rem);
+    margin-top: clamp(2rem, 4vw, 3rem);
     padding-top: 1.5rem;
   }
 
@@ -146,7 +312,7 @@ const meta = resolveProjectMeta(project)
   }
 
   .meta dt {
-    font-size: 0.72rem;
+    font-size: var(--t-label);
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--muted);
@@ -159,88 +325,145 @@ const meta = resolveProjectMeta(project)
     overflow-wrap: anywhere;
   }
 
-  .cover {
-    margin-top: clamp(3rem, 6vw, 5rem);
-    background: var(--soft);
+  /* ---- The media strip ----
+     ITEMS ARE PACKED, NOT LINED UP. `align-items: start` alone was not enough
+     and the earlier note here was wrong about it: a grid still places a whole
+     ROW at a time, so three pictures of different heights all began on the same
+     line and the next three began below the tallest of them. That is a ladder
+     with ragged bottoms — the eye reads rows. Measured on the reference this was
+     compared against, its pictures share one width (266px) but start at nine
+     different heights: 273, 273, 273, 530, 592, 655, 657, 903, 966. Each one
+     follows the shortest column, which is what makes the wall look composed
+     rather than tabulated.
+
+     No CSS does that on its own today: `grid-template-rows: masonry` is not
+     shipped, and `columns` fills the first column to the bottom before starting
+     the second, which puts picture two under picture one instead of beside it —
+     wrong reading order for a gallery. So the grid is given a very fine row
+     track and each item is told how many of them it needs; auto-placement then
+     packs exactly as masonry does, in document order, with no crop and no
+     stretch. The script below is the only part that has to measure.
+
+     WARNING: WITHOUT JAVASCRIPT THIS MUST STILL BE A GALLERY. The row track and
+     the spans only apply under `html.js`; everything else falls back to the
+     plain row grid, which is merely tabular rather than broken. */
+  .media {
+    display: grid;
+    grid-template-columns: repeat(var(--media-cols, 3), minmax(0, 1fr));
+    gap: var(--media-gap);
+    align-items: start;
+    grid-auto-flow: dense;
+    padding-top: clamp(2.25rem, 5vw, 4rem);
+    --media-gap: clamp(0.85rem, 1.5vw, 1.4rem);
+    /* The track the script counts in. Fine enough that rounding up costs a
+       couple of pixels, coarse enough not to make hundreds of tracks. */
+    --media-unit: 4px;
   }
 
-  .cover img {
+  :global(html.js) .media.is-packed {
+    grid-auto-rows: var(--media-unit);
+    grid-auto-flow: row dense;
+  }
+
+  .item {
+    grid-column: span var(--span, 1);
+    background: var(--soft);
+    overflow: hidden;
+    position: relative;
+    min-width: 0;
+  }
+
+  .item img,
+  .item video {
+    display: block;
     width: 100%;
-    max-height: 82svh;
+    height: auto;
+  }
+
+  /* WARNING: A RATIO IS A CROP. Without one a picture keeps its own shape and
+     nothing is cut off — the covers here run from 1.26:1 to 3.29:1, and forcing
+     them all into one box would keep a slice of the widest. A ratio is applied
+     only when an editor asks for one; a film always has one, because its real
+     shape is unknown until the file loads and the page must not jump. */
+  .item[data-ratio] img,
+  .item video {
+    aspect-ratio: var(--ratio, 16 / 9);
+    height: 100%;
     object-fit: cover;
   }
 
+  .item video {
+    cursor: pointer;
+  }
+
+  /* The badge is a real button, not decoration: without it a film with no
+     controls is a picture that happens to move, and the sound cannot be
+     reached with a keyboard at all. */
+  .sound {
+    position: absolute;
+    left: clamp(0.6rem, 1.2vw, 1rem);
+    bottom: clamp(0.6rem, 1.2vw, 1rem);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink) 72%, transparent);
+    color: var(--bg);
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.25s ease;
+  }
+
+  .sound:hover {
+    background: var(--ink);
+  }
+
+  /* Left-aligned like everything above it: the words start on the same edge as
+     the title and the logo, so the page has one margin rather than two. */
   .body-grid {
-    display: grid;
-    grid-template-columns: 1fr minmax(0, 44rem) 1fr;
     padding-block: clamp(3.5rem, 7vw, 6rem);
   }
 
   .body {
-    grid-column: 2;
+    max-width: 44rem;
     display: grid;
     gap: 1.5rem;
     font-size: 1.05rem;
   }
 
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: clamp(1.5rem, 3vw, 3rem);
+  /* An item can never span more columns than the grid has: a `span 3` left in
+     place on a two-column grid opens an implicit third track and pushes the
+     strip off the side of the page. */
+  @media (max-width: 900px) {
+    .media {
+      --media-cols: 2;
+    }
+
+    .item {
+      grid-column: span 1;
+    }
+
+    .item[data-wide] {
+      grid-column: span 2;
+    }
   }
 
-  .gallery figure {
-    background: var(--soft);
-    overflow: hidden;
-  }
+  @media (max-width: 620px) {
+    .media {
+      --media-cols: 1;
+    }
 
-  .gallery figure:first-child {
-    grid-column: 1 / -1;
-  }
+    .item,
+    .item[data-wide] {
+      grid-column: span 1;
+    }
 
-  .gallery img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    aspect-ratio: 3 / 2;
-  }
-
-  .pn {
-    display: flex;
-    justify-content: space-between;
-    gap: 2rem;
-    padding-block: clamp(3.5rem, 7vw, 6rem);
-  }
-
-  .pn a {
-    display: grid;
-    gap: 0.4rem;
-  }
-
-  .pn a span {
-    font-size: 0.75rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .pn a strong {
-    font-family: var(--font-display);
-    font-size: clamp(1.2rem, 2.6vw, 1.9rem);
-    font-weight: 500;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.25s ease;
-  }
-
-  .pn a:hover strong {
-    border-color: var(--ink);
-  }
-
-  .pn .next {
-    text-align: right;
-  }
-
-  @media (max-width: 800px) {
     .meta {
       gap: 1.25rem;
     }

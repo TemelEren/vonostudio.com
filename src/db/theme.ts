@@ -72,6 +72,35 @@ export const FONTS: Record<string, { label: string; stack: string; webfont: bool
   },
 };
 
+/**
+ * How the project grid changes when a category is chosen.
+ *
+ * WARNING: THE STORED VALUE IS A KEY, LIKE A FONT. The stylesheet carries every
+ * one of these transitions already and the key only selects which set of rules
+ * applies (`<html data-anim>`); nothing an editor types reaches CSS. A key this
+ * site has never heard of falls back to the default rather than leaving the
+ * grid with no transition at all.
+ *
+ * WARNING: THE PANEL SHIPS ITS OWN COPY of this list — the two repos share only
+ * content.db (UI-GELISTIRME section 1) — so the lists can drift. Drift is
+ * harmless in one direction only: the panel offering a key this site drops
+ * shows the visitor the default, which is why the fallback exists.
+ *
+ * `stagger` is deliberately its own entry rather than a flag: an editor picks a
+ * behaviour they can see, not two settings they have to combine in their head.
+ */
+export const FILTER_ANIMS: Record<string, { label: string }> = {
+  yok: { label: 'Animasyon yok' },
+  fade: { label: 'Soluklaşarak' },
+  'fade-up': { label: 'Aşağıdan yükselerek' },
+  scale: { label: 'Hafifçe büyüyerek' },
+  blur: { label: 'Bulanıklaşarak' },
+  stagger: { label: 'Sırayla (kart kart)' },
+};
+
+/** Bounds a transition can hold without becoming either invisible or a wait. */
+export const FILTER_MS = { min: 120, max: 1200, default: 420 };
+
 /** The look the site had before any of this was editable. */
 export const THEME_DEFAULT: Theme = {
   colors: {
@@ -82,7 +111,12 @@ export const THEME_DEFAULT: Theme = {
     soft: '#f4f4f1',
   },
   fonts: { display: 'space-grotesk', body: 'inter' },
-  layout: { padMin: 1.25, padMax: 4, navH: 4.5 },
+  /* WARNING: navH MUST MATCH global.css. This value is what a theme row lands
+     on, so a drift here means the bar silently changes height the first time
+     anyone saves any theme setting at all — it stood at 4.5 while the
+     stylesheet said 5, and now both say 5.5. */
+  layout: { padMin: 1.25, padMax: 4, navH: 5.5 },
+  motion: { projectFilter: 'fade', filterMs: FILTER_MS.default },
 };
 
 /* A colour the site is willing to put in a stylesheet.
@@ -187,6 +221,7 @@ export function resolveTheme(raw: unknown): Theme {
   const c = (t.colors ?? {}) as Partial<Theme['colors']>;
   const f = (t.fonts ?? {}) as Partial<Theme['fonts']>;
   const l = (t.layout ?? {}) as Partial<Theme['layout']>;
+  const m = (t.motion ?? {}) as Partial<NonNullable<Theme['motion']>>;
   const yuklenen = customFonts(t.customFonts);
   const d = THEME_DEFAULT;
   return {
@@ -207,6 +242,14 @@ export function resolveTheme(raw: unknown): Theme {
       padMax: rem(l.padMax, d.layout.padMax, 1, 10),
       navH: rem(l.navH, d.layout.navH, 3, 8),
     },
+    motion: {
+      projectFilter: Object.hasOwn(FILTER_ANIMS, String(m.projectFilter))
+        ? String(m.projectFilter)
+        : d.motion!.projectFilter,
+      filterMs: Math.round(
+        rem(m.filterMs, d.motion!.filterMs, FILTER_MS.min, FILTER_MS.max)
+      ),
+    },
   };
 }
 
@@ -216,6 +259,15 @@ export function resolveTheme(raw: unknown): Theme {
  * WARNING: IT ONLY OVERRIDES — global.css keeps every default. A theme row that
  * goes missing, or a value that fails validation, therefore lands on the design
  * the site shipped with instead of an unstyled page.
+ *
+ * WARNING: `:root:root` IS NOT A TYPO, AND WITHOUT IT NOTHING HERE APPLIES.
+ * A plain `:root` has exactly the specificity of the `:root` in global.css, so
+ * the winner is whichever the browser reads LAST — and that is decided by where
+ * the bundler puts the stylesheet, which is not ours to control. Measured with
+ * a theme asking for `--bg:#123456`: the page computed `#ffffff` in the dev
+ * server AND in a production build, i.e. every colour, typeface and length an
+ * editor set was being discarded. Repeating the pseudo-class doubles the
+ * specificity and settles it by weight instead of by order.
  */
 export function themeCss(theme: Theme): string {
   const d = THEME_DEFAULT;
@@ -226,7 +278,7 @@ export function themeCss(theme: Theme): string {
     /* Faces first: a :root that names a family the browser has not been told
        about would render in the fallback for the first paint. */
     fontFaceCss(yuklenen),
-    ':root{',
+    ':root:root{',
     `--bg:${t.colors.bg};`,
     `--ink:${t.colors.ink};`,
     `--muted:${t.colors.muted};`,
@@ -236,6 +288,9 @@ export function themeCss(theme: Theme): string {
     `--font-body:${stackFor(t.fonts.body, yuklenen, d.fonts.body)};`,
     `--pad:${pad};`,
     `--nav-h:${t.layout.navH}rem;`,
+    /* The stylesheet owns WHICH transition runs (`data-anim`); this is only
+       HOW LONG it takes, so one number covers every variant. */
+    `--filter-ms:${t.motion!.filterMs}ms;`,
     '}',
   ].join('');
 }
