@@ -38,5 +38,18 @@
   "project.area": "Alan",
   "project.status": "Durum",
   "project.category": "Kategori",
-  "project.sound": "Sesli izle"
+  "project.sound": "Sesli izle",
+  "contact.form.title": "Ya da formu doldurun",
+  "contact.form.name": "Ad Soyad / Firma",
+  "contact.form.email": "E-posta",
+  "contact.form.phone": "Telefon (isteğe bağlı)",
+  "contact.form.message": "Projeniz hakkında kısaca",
+  "contact.form.message.hint": "Proje türü, konum, yaklaşık alan ve başlangıç zamanı yazarsanız ilk dönüşümüz daha isabetli olur.",
+  "contact.form.consent": "Aydınlatma metnini okudum; iletişim bilgilerimin talebimin değerlendirilmesi ve tarafıma dönüş yapılması amacıyla işlenmesini kabul ediyorum.",
+  "contact.form.privacy.title": "Aydınlatma metni",
+  "contact.form.privacy": "6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca veri sorumlusu VONO MİMARLIK TASARIM İNŞAAT'tır. Bu formla ilettiğiniz ad, e-posta, telefon ve mesaj içeriği yalnızca talebinizin değerlendirilmesi, tarafınıza dönüş yapılması ve gerekmesi hâlinde teklif hazırlanması amacıyla işlenir. Verileriniz bu amaç dışında kullanılmaz, üçüncü kişilerle paylaşılmaz ve yurt dışına aktarılmaz; kendi sunucumuzda saklanır ve talebiniz sonuçlandıktan sonra makul süre içinde silinir. Bu onay yalnızca talebinize dönüş içindir; tanıtım ve kampanya iletisi göndermemiz için ayrıca izniniz istenir. Kanunun 11. maddesi kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınızı yukarıdaki e-posta adresine yazarak kullanabilirsiniz.",
+  "contact.form.submit": "Talebi gönder",
+  "contact.form.sending": "Gönderiliyor…",
+  "contact.form.ok": "Teşekkürler, talebiniz bize ulaştı. En kısa sürede dönüş yapacağız.",
+  "contact.form.error": "Talep gönderilemedi. Lütfen tekrar deneyin ya da doğrudan e-posta yazın."
 }

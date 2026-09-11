@@ -104,7 +104,10 @@ for (const [index, file] of projectFiles.sort().entries()) {
 let assets = 0;
 for (const file of walk(publicDir)) {
   const path = `/${relative(publicDir, file).split(sep).join('/')}`;
-  insertAsset.run(path, mimeFor(file), readFileSync(file), statSync(file).mtimeMs | 0);
+  /* Epoch SECONDS, the unit the editing panel writes. `mtimeMs | 0` squeezed a
+     millisecond timestamp through a 32-bit integer and stored a meaningless,
+     future-looking number (the "2032" rows). */
+  insertAsset.run(path, mimeFor(file), readFileSync(file), Math.floor(statSync(file).mtimeMs / 1000));
   assets += 1;
 }
 

@@ -23,6 +23,13 @@ services:
 
     environment:
       CONTENT_DB: /data/content.db
+      # İletişim formu → ERP (bkz. .env.example). Boşsa form kapalıdır.
+      ERP_INTAKE_URL: "${ERP_INTAKE_URL:-}"
+      ERP_INTAKE_KEY: "${ERP_INTAKE_KEY:-}"
+      # Panelin taslak önizlemesi (isteğe bağlı, bkz. .env.example). İkisi de
+      # boşsa önizleme kapalıdır ve site yalnız yayındaki sürümü sunar.
+      CONTENT_DRAFT_DB: "${CONTENT_DRAFT_DB:-}"
+      PREVIEW_TOKEN: "${PREVIEW_TOKEN:-}"
 
     # Konteynerin çalıştığı kullanıcı. Bind mount edilen klasörün sahibiyle
     # aynı olmalı; `id -u`:`id -g` çıktısını .env içine yazabilirsiniz.

@@ -49,15 +49,26 @@ export function previewAllowed(token: string | null | undefined): boolean {
   return typeof token === 'string' && token.length > 0 && token === PREVIEW_TOKEN;
 }
 
+/* WARNING: A READER MUST WAIT FOR THE PANEL, NOT FAIL. content.db runs in
+   rollback-journal mode, and while the editing panel commits (a publish
+   rewrites every row in one transaction, ~30 ms) new readers are refused.
+   node:sqlite's busy timeout defaults to 0, so the refusal became an immediate
+   "database is locked" and a 500 for whoever was loading a page — measured:
+   5 of 63 visitor requests failed during 12 publishes. Waiting a few
+   milliseconds is invisible; failing is not. (WAL would avoid the lock, but it
+   needs a writable -shm file, which this process may not have when the panel
+   runs as a different user.) */
+const BUSY_MS = 5000;
+
 function open(path: string): DatabaseSync {
   try {
-    return new DatabaseSync(path, { readOnly: true });
+    return new DatabaseSync(path, { readOnly: true, timeout: BUSY_MS });
   } catch (error) {
     // A database left in WAL mode can refuse read-only connections when no
     // writer has created the -shm file yet. Fall back to a normal connection;
     // this process still never writes.
     if (String(error).includes('unable to open database file')) {
-      return new DatabaseSync(path);
+      return new DatabaseSync(path, { timeout: BUSY_MS });
     }
     throw error;
   }

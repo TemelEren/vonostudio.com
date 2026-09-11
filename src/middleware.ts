@@ -73,8 +73,17 @@ export const onRequest = defineMiddleware((context, next) => {
   context.locals.preview = preview;
 
   return withDatabase(async () => {
-    const path = decodeURIComponent(context.url.pathname);
-    const asset = loadAssetMeta(path);
+    /* A malformed escape ("/%E0%A4%A") makes decodeURIComponent throw. The
+       production server answers such a URL with 400 before it gets here; the
+       dev server did not and returned 500 (measured). Treat it as "not a file"
+       and let the router decide. */
+    let path = '';
+    try {
+      path = decodeURIComponent(context.url.pathname);
+    } catch {
+      /* not a file */
+    }
+    const asset = path ? loadAssetMeta(path) : undefined;
     if (!asset) {
       const response = await next();
       /* WARNING: A PREVIEW IS NEVER CACHED AND NEVER INDEXED. It shows work that
@@ -93,7 +102,6 @@ export const onRequest = defineMiddleware((context, next) => {
       'Content-Type': asset.mime,
       'Cache-Control': preview ? 'no-store' : 'no-cache',
       ETag: etag,
-      'Last-Modified': new Date(asset.updated).toUTCString(),
       /* Says a seek is possible. A player that does not see this downloads the
          whole file before it will let anyone scrub it. */
       'Accept-Ranges': 'bytes',
@@ -101,6 +109,16 @@ export const onRequest = defineMiddleware((context, next) => {
          upload into something executable and run it on this origin. */
       'X-Content-Type-Options': 'nosniff',
     };
+
+    /* `updated` is epoch SECONDS — what the editing panel writes
+       (SiteContentService.SaveAsset). It was read as milliseconds and every
+       file claimed to date from January 1970 (measured). Rows written by the
+       old seed script hold a truncated, future-looking number; a date the
+       server cannot stand behind is left out rather than sent. */
+    const degisti = asset.updated * 1000;
+    if (degisti > 0 && degisti < Date.now() + 86_400_000) {
+      headers['Last-Modified'] = new Date(degisti).toUTCString();
+    }
 
     /* WARNING: AN SVG IS A DOCUMENT, NOT A PICTURE. Inside an <img> a browser
        already refuses its scripts, but a visitor who opens the file's own URL

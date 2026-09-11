@@ -28,7 +28,7 @@ CREATE TABLE assets (
   path    TEXT PRIMARY KEY,   -- '/projects/vono-ofis.jpg' — başında / var
   mime    TEXT NOT NULL,      -- 'image/jpeg'
   bytes   BLOB NOT NULL,
-  updated INTEGER NOT NULL    -- unix ms; ETag üretmek için kullanılır
+  updated INTEGER NOT NULL    -- unix SANİYE; ETag ve Last-Modified bundan üretilir
 );
 ```
 
