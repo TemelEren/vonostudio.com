@@ -164,7 +164,7 @@ const socials = settings.social.map((s) => {
    The handle beside the label comes from the Instagram account already listed
    under social - typed once, not twice. */
 const insta = loadInstagram();
-const instaEtiket = metin('contact.instagram.label', 'Instagram', 'Instagram');
+const instaEtiket = metin('contact.instagram.label', 'INSTAGRAM Film', 'INSTAGRAM Film');
 const instaHesap = (() => {
   const s = settings.social.find((x) => platform(x.name, x.link) === 'instagram');
   if (!s) return null;
@@ -345,10 +345,12 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
     )
   }
 
-  {/* ---- INSTAGRAM STRIP (§5.221) ----
-      Under the map, full bleed like it. Grey until the pointer is on a tile,
-      films silent and playing only while on screen. A tile without a link is
-      a picture, not a dead link. */}
+  {/* ---- INSTAGRAM STRIP (§5.221, §5.233) ----
+      Under the map, full bleed like it. Each film shows only its grey cover
+      until someone asks for it: the pointer on it (desktop) or a tap (phone).
+      WARNING: NO FILM IS DOWNLOADED ON PAGE LOAD. The address sits in data-src
+      and preload is "none"; it becomes a real src only when the film is asked
+      for. A tile without a link is a picture, not a dead link. */}
   {
     insta.length > 0 && (
       <div class="insta" data-reveal>
@@ -365,16 +367,19 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
             const ad = `${instaEtiket || 'Instagram'} — ${i + 1}`;
             const icerik =
               m.kind === 'video' ? (
-                <video
-                  src={m.src}
-                  poster={m.poster || undefined}
-                  muted
-                  loop
-                  playsinline
-                  preload="metadata"
-                  disablepictureinpicture
-                  aria-hidden="true"
-                />
+                <>
+                  <video
+                    data-src={m.src}
+                    poster={m.poster || undefined}
+                    muted
+                    loop
+                    playsinline
+                    preload="none"
+                    disablepictureinpicture
+                    aria-hidden="true"
+                  />
+                  <span class="insta-oynat" aria-hidden="true" />
+                </>
               ) : (
                 <img src={m.src} alt="" loading="lazy" decoding="async" />
               );
@@ -390,11 +395,11 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
             return (
               <li>
                 {hedef ? (
-                  <a class="insta-oge" href={hedef} target="_blank" rel="noopener noreferrer" aria-label={ad}>
+                  <a class="insta-oge" href={hedef} target="_blank" rel="noopener noreferrer" aria-label={ad} data-film={m.kind === 'video' ? '' : undefined}>
                     {icerik}
                   </a>
                 ) : (
-                  <div class="insta-oge" role="img" aria-label={ad}>
+                  <div class="insta-oge" role="img" aria-label={ad} data-film={m.kind === 'video' ? '' : undefined}>
                     {icerik}
                   </div>
                 )}
@@ -791,12 +796,15 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
     margin-bottom: 1rem;
   }
 
+  /* The heading is written as the editor typed it ("INSTAGRAM Film",
+     2026-09-13). WARNING: global.css uppercases every h1-h4 (§5.217), so the
+     rule must say "none" explicitly - leaving it out still printed "FİLM". */
   .insta-bas h4 {
     font-family: var(--font-display);
     font-size: var(--t-label);
     font-weight: 500;
     letter-spacing: 0.2em;
-    text-transform: uppercase;
+    text-transform: none;
     color: var(--muted);
   }
 
@@ -834,10 +842,49 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
   }
 
   .insta-oge {
+    position: relative;
     display: block;
     aspect-ratio: 9 / 16;
     overflow: hidden;
     background: var(--soft);
+  }
+
+  /* A grey cover alone does not say "film" - a small play mark does. It goes
+     away while the film runs. Drawn with borders, no icon file. */
+  .insta-oynat {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    background: rgba(16, 16, 16, 0.35);
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .insta-oynat::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 54%;
+    border-style: solid;
+    border-width: 0.45rem 0 0.45rem 0.75rem;
+    border-color: transparent transparent transparent #fff;
+    transform: translate(-50%, -50%);
+  }
+
+  .insta-oge.oynuyor .insta-oynat {
+    opacity: 0;
+  }
+
+  /* Playing = in colour, on any device: on a phone there is no hover to lift
+     the grey, the tap that started the film does it. */
+  .insta-oge.oynuyor img,
+  .insta-oge.oynuyor video {
+    filter: none;
   }
 
   .insta-oge img,
@@ -884,6 +931,7 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
     .sosyal a,
     .insta-oge img,
     .insta-oge video,
+    .insta-oynat,
     .adres > span:first-child {
       transition: none;
     }
@@ -928,24 +976,102 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
 </script>
 
 <script>
-  /* ---- INSTAGRAM STRIP ----
-     WARNING: NOT `autoplay`. Twenty-four tiles would mean twenty-four decoders
-     and downloads running below the fold. A film plays while it is on screen
-     and stops when it leaves (same rule as the project films, §5.191); someone
-     who asked the system for less motion gets still frames. */
-  const instaFilmler = Array.from(document.querySelectorAll<HTMLVideoElement>('.insta video'));
+  /* ---- INSTAGRAM STRIP (§5.233) ----
+     WARNING: NOTHING PLAYS AND NOTHING DOWNLOADS ON ITS OWN. The film address
+     waits in data-src; it becomes src only when the film is asked for:
+       - mouse: the pointer on the tile plays it in colour with sound, leaving
+         stops it; a click follows the link as before;
+       - touch: the first tap plays it (the tap is the gesture, so sound is
+         allowed), the second tap on the same tile follows the link.
+     WARNING: THE HANDLER NEVER OPENS A WINDOW ITSELF (§5.225). It only holds
+     back the first tap; the second one is the link's own default, so there is
+     exactly one new tab.
+     WARNING: SOUND ON HOVER IS A BROWSER DECISION. Hover is not a user gesture:
+     until the visitor has clicked or tapped somewhere on the page, browsers
+     refuse to start a film with sound. Then it plays muted rather than not at
+     all, and sound comes with the next hover after any click. */
+  const serit = document.querySelector<HTMLElement>('.insta-serit');
 
-  if (instaFilmler.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (serit) {
+    const azHareket = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let aktif: HTMLElement | null = null;
+    let sonIsaretci = '';
+
+    const filmOf = (oge: HTMLElement) => oge.querySelector<HTMLVideoElement>('video');
+
+    const durdur = (oge: HTMLElement) => {
+      oge.classList.remove('oynuyor');
+      const film = filmOf(oge);
+      if (film) {
+        film.pause();
+        film.muted = true;
+      }
+      if (aktif === oge) aktif = null;
+    };
+
+    const baslat = (oge: HTMLElement) => {
+      const film = filmOf(oge);
+      if (!film) return;
+      if (aktif && aktif !== oge) durdur(aktif);
+      if (!film.getAttribute('src') && film.dataset.src) film.src = film.dataset.src;
+      aktif = oge;
+      oge.classList.add('oynuyor');
+      film.muted = false;
+      film.play().catch(() => {
+        if (aktif !== oge) return;
+        film.muted = true;
+        film.play().catch(() => {});
+      });
+    };
+
+    const ogeOf = (e: Event) =>
+      (e.target as Element | null)?.closest<HTMLElement>('.insta-oge[data-film]') ?? null;
+
+    serit.addEventListener('pointerover', (e) => {
+      if (e.pointerType !== 'mouse' || azHareket.matches) return;
+      const oge = ogeOf(e);
+      if (oge && oge !== aktif) baslat(oge);
+    });
+
+    serit.addEventListener('pointerout', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const oge = ogeOf(e);
+      if (oge && !oge.contains(e.relatedTarget as Node | null)) durdur(oge);
+    });
+
+    serit.addEventListener('pointerdown', (e) => {
+      sonIsaretci = e.pointerType;
+    });
+
+    serit.addEventListener('click', (e) => {
+      const dokunma = sonIsaretci === 'touch' || sonIsaretci === 'pen';
+      sonIsaretci = '';
+      if (!dokunma) return;
+      const oge = ogeOf(e);
+      if (!oge) return;
+      if (oge !== aktif) {
+        e.preventDefault();
+        baslat(oge);
+      } else if (oge.tagName !== 'A') {
+        durdur(oge);
+      }
+    });
+
+    /* A film that scrolls away stops - otherwise its sound keeps playing
+       below the fold. */
     const izleyici = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const film = entry.target as HTMLVideoElement;
-          if (entry.isIntersecting) film.play().catch(() => {});
-          else film.pause();
+          const oge = (entry.target as HTMLElement).closest<HTMLElement>('.insta-oge');
+          if (!entry.isIntersecting && oge && oge === aktif) durdur(oge);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.1 }
     );
-    for (const film of instaFilmler) izleyici.observe(film);
+    for (const film of serit.querySelectorAll('video')) izleyici.observe(film);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && aktif) durdur(aktif);
+    });
   }
 </script>
