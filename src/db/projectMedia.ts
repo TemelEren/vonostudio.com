@@ -31,7 +31,18 @@ import type { Project, ProjectMediaItem } from './types';
 
 export type MediaKind = 'image' | 'video';
 
-/** Columns the strip is laid out on. Referenced by the CSS, so it lives here. */
+/** Columns the grid is laid out on. Referenced by the CSS, so it lives here.
+ *
+ * Measured on the reference's own project page (2026-09-12,
+ * /tr/work/beach-house-i-bodrum25/): 14 pictures on FOUR columns of equal
+ * width - 267px each, 20px apart - where only the HEIGHT varies with the
+ * photograph (a 3:4 portrait ran 356px, a 1.2:1 landscape 222px). Four is what
+ * makes that mixed wall read as one scale rather than as a set of sizes.
+ *
+ * WARNING: THREE, NOT FOUR (editor, 2026-09-13: "a row in a project should hold
+ * 3 photographs, not 4, scaled to fit the same width"). The wall still spans
+ * the same container; each picture is simply a third of it instead of a
+ * quarter. The panel's MEDYA_SUTUN must say the same number. */
 export const MEDIA_COLUMNS = 3;
 
 /**
@@ -65,7 +76,13 @@ const VIDEO_EXT = ['.mp4', '.webm'];
  * default therefore stays plain and any single item can still be given its own
  * `span` — an editor who wants a 2+1 row can ask for one.
  */
-export const SPAN_RHYTHM = [3, 1, 1, 1];
+/* WARNING: THE DEFAULT IS NOW PLAIN, AND THAT IS THE REFERENCE'S SCALE. A
+   rhythm that made every fourth picture full-width was what the editor asked
+   to replace ("mixed grid, at the scale of this example", 2026-09-12): on the
+   reference no picture is privileged, every column is the same width and the
+   variety comes from the photographs themselves. A single item can still be
+   widened from the panel - it just is not the default any more. */
+export const SPAN_RHYTHM = [1];
 
 /** Default box for a film: its real shape is unknown until the file loads. */
 const VIDEO_RATIO = '16/9';

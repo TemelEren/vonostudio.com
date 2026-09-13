@@ -40,6 +40,8 @@ services:
       # -wal ve -shm dosyaları açar ve düzenleme arayüzü dosyayı yerinden
       # değiştirebilir; ikisi de ancak klasör mount edilirse doğru çalışır.
       # Düzenleme arayüzü de aynı klasörü bağlayarak yazar.
+      # Videolar bu klasörün içindeki content-medya/ altında durur (veritabanında
+      # değil) — ayrı bir bağlama gerekmez, ama YEDEKTE klasörün tamamı alınmalı.
       - ${DB_DIR:-./data}:/data
 
     logging:

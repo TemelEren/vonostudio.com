@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { pick, resolveProjectMedia, resolveProjectMeta, type Project } from '../db';
+import { metaText, projectTitle, resolveProjectMedia, type Project } from '../db';
 import { useTranslations, localePath, type Locale } from '../i18n/ui';
 import { projectPath, projectSchema } from '../seo/pages';
 
@@ -9,37 +9,44 @@ interface Props {
   project: Project;
 }
 const { locale, project } = Astro.props;
+/* The name in the page language (db/projectMeta.ts). Read once: the heading,
+   the document title and every alt text must agree. */
+const title = projectTitle(project, locale);
 const t = useTranslations(locale);
 
 const altUrl = projectPath(locale === 'tr' ? 'en' : 'tr', project.slug);
 
-/* The strip is a list now, not five fixed columns: it can be renamed,
-   reordered, trimmed or extended per project (see db/projectMeta.ts). A row
-   with no value prints nothing at all — an empty caption reads as missing
-   data rather than as a field this project simply does not have. */
-const meta = resolveProjectMeta(project)
-  .map((row) => ({
-    label: pick(row.label, locale) || (row.labelKey ? t(row.labelKey) : ''),
-    value: pick(row.value, locale).trim(),
-  }))
-  .filter((row) => row.value);
+/* THE HEADING CARRIES THE FACTS; THERE IS NO CREDITS STRIP (editor, 2026-09-12).
+   Modelled on the reference's own detail page, measured the same day:
+   `<h1>APONINE | Istanbul'25</h1>` - name, a bar, place and year, one line,
+   no legend of labelled fields. Here: "NAME | PLACE YEAR", and the category
+   underneath in a smaller voice ("Yarışma — 1. Ödül").
+
+   Read BY KEY off the meta list (db/projectMeta.ts): renaming "Yıl" to
+   "Tarih" in the panel keeps working, deleting the row removes the value, and
+   nothing invents it back. Area, status and any custom row stay in the data but
+   are no longer printed on this page - the editor asked for the legend to go.
+
+   WARNING: NO VALUE, NO SEPARATOR. A project without place and year prints its
+   name alone; a stray "|" reads as a broken template. */
+const where = [metaText(project, 'location', locale), metaText(project, 'year', locale)]
+  .filter(Boolean);
+const kicker = metaText(project, 'category', locale);
 
 /* One ordered list, whatever the project happens to carry: an editor's `media`
    if it has one, otherwise its cover and gallery (db/projectMedia.ts). */
 const media = resolveProjectMedia(project);
 
-/* WARNING: A NEW KEY IS MISSING FROM EVERY EXISTING DATABASE, and `t()` returns
-   the key itself when a row is absent — the button would read "project.sound".
-   The wording is editable the moment someone adds the row; until then the
-   component says it in the page's own language (same as `projects.all`). */
-const rawSound = t('project.sound');
-const soundLabel =
-  rawSound === 'project.sound' ? (locale === 'tr' ? 'Sesli izle' : 'Watch with sound') : rawSound;
+/* WARNING: NO "WATCH WITH SOUND" BADGE ANY MORE (editor, 2026-09-13: "the
+   'sesli izle' text on the video should go"). A film on the wall now opens in
+   the same dark full-screen field as a picture (§5.227) - with its controls and
+   its sound - so the badge had nothing left to say. `project.sound` left the
+   seed and the panel catalogue with it. */
 ---
 
 <Base
   locale={locale}
-  title={`${project.title} — Vono Studio`}
+  title={`${title} — Vono Studio`}
   description={project.excerpt[locale]}
   altUrl={altUrl}
   image={project.cover}
@@ -47,35 +54,45 @@ const soundLabel =
   schema={projectSchema(Astro.site!, locale, project)}
 >
   <article class="detail">
-    {/* WARNING: THE TOP BLOCK IS PLAIN FLOW, NOT A FLEX COLUMN. It used to be
-        one, so a single cover could take whatever height the words left over.
-        `.container` carries `margin-inline: auto`, which centres a shrink-to-fit
-        FLEX ITEM — measured at 1440px the title sat at x=441 while the logo
-        directly above it sat at x=58. In normal flow the container is a block,
-        fills the line, and the title starts on the same edge as the logo. */}
     <div class="container head">
       <a class="back" href={localePath(locale, '/#projeler')}>← {t('project.back')}</a>
 
+    {/* WARNING: ONLY THE TITLE SITS ABOVE THE WORK (editor, 2026-09-12).
+        The summary and the credits moved BELOW the pictures: measured at
+        1440px they were pushing the first photograph to y=517 and taking
+        255px of the first screen to answer questions - dimensions, year,
+        location - that are only asked after the work has been seen. */}
       <header data-reveal>
-        <h1>{project.title}</h1>
-        <p class="excerpt">{project.excerpt[locale]}</p>
+        {/* One h1, as on the reference: place and year belong to the page's
+            headline for a search engine too. The bar is decoration and stays
+            out of the accessible name; the year is glued to the place with a
+            no-break space so it never wraps onto a line by itself. */}
+        <h1>
+          <span class="name">{title}</span>
+          {where.length > 0 && (
+            <Fragment>
+              <span class="sep" aria-hidden="true">|</span>
+              <span class="where">{where.join('\u00a0')}</span>
+            </Fragment>
+          )}
+        </h1>
+        {kicker && <p class="kicker">{kicker}</p>}
       </header>
-
-      {
-        meta.length > 0 && (
-          <dl class="meta" data-reveal>
-            {meta.map((m) => (
-              <div>
-                <dt>{m.label}</dt>
-                <dd>{m.value}</dd>
-              </div>
-            ))}
-          </dl>
-        )
-      }
     </div>
 
-    {/* The work, in the order and at the widths the editor chose. */}
+    {/* THE WORK: ONE MIXED WALL, AT THE REFERENCE'S SCALE.
+        Measured on /tr/work/beach-house-i-bodrum25/ (2026-09-12): 14 pictures
+        on four columns of EQUAL width (267px, 20px apart) where only the
+        height varies - a 3:4 portrait ran 356px, a 1.2:1 landscape 222px. No
+        picture is privileged and nothing is cropped; the variety is the
+        photographs' own.
+
+        WARNING: THIS REPLACES THE ONE-SCREEN STAGE OF 5.214 AND THAT IS A
+        DELIBERATE REVERSAL. That layout fitted every picture into the first
+        screen, which the editor asked for at the time; asking for this grid
+        instead means the page scrolls again (the reference's own runs 1999px
+        for 14 pictures at 1440x900). Both cannot be true at once - a wall that
+        keeps each photograph's shape cannot also be capped at one screen. */}
     {
       media.length > 0 && (
         <div class="container media">
@@ -83,15 +100,24 @@ const soundLabel =
             <figure
               class:list={['item', m.kind]}
               data-wide={m.span >= 2 ? '' : undefined}
-              data-ratio={m.ratio ? '' : undefined}
               style={`--span:${m.span}${m.ratio ? `;--ratio:${m.ratio}` : ''}`}
               data-reveal
             >
               {m.kind === 'video' ? (
-                <Fragment>
-                  {/* Muted, looping and inline: autoplay with sound is blocked
-                      by every browser and would be rude anyway. Sound arrives
-                      only when someone asks for it — see the script below. */}
+                /* WARNING: A FILM OPENS EXACTLY LIKE A PICTURE (§5.227). The
+                   wall keeps a silent, looping preview; the click opens the
+                   same field, the same size, and plays the film there with
+                   sound and controls. The browser's own full screen was a
+                   different room with different chrome - the editor asked for
+                   "the same background and size". */
+                <button
+                  type="button"
+                  class="zoom"
+                  data-full={m.src}
+                  data-kind="video"
+                  data-poster={m.poster || undefined}
+                  aria-label={`${title} — ${i + 1} (video)`}
+                >
                   <video
                     src={m.src}
                     poster={m.poster || undefined}
@@ -100,20 +126,36 @@ const soundLabel =
                     playsinline
                     preload="metadata"
                     disablepictureinpicture
-                    aria-label={project.title}
+                    aria-hidden="true"
+                    tabindex="-1"
                   />
-                  <button type="button" class="sound">
-                    <span aria-hidden="true">&#9654;</span> {soundLabel}
-                  </button>
-                </Fragment>
+                  <span class="veil" aria-hidden="true"></span>
+                  <span class="plus play" aria-hidden="true"></span>
+                </button>
               ) : (
-                <img
-                  src={m.src}
-                  alt={i === 0 ? project.title : `${project.title} — ${i + 1}`}
-                  loading={i === 0 ? 'eager' : 'lazy'}
-                  fetchpriority={i === 0 ? 'high' : undefined}
-                  decoding="async"
-                />
+                /* A real button, not a div with a handler: the wall is now
+                   openable, so every picture has to be reachable and
+                   announceable by keyboard too. */
+                <button
+                  type="button"
+                  class="zoom"
+                  data-full={m.src}
+                  aria-label={`${title} — ${i + 1}`}
+                >
+                  <img
+                    src={m.src}
+                    alt={i === 0 ? title : `${title} — ${i + 1}`}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    fetchpriority={i === 0 ? 'high' : undefined}
+                    decoding="async"
+                  />
+                  {/* Measured on the reference: a dark veil at 50% plus a small
+                      plus sign, both arriving on hover. The veil is the signal
+                      that the picture opens - without the mark it just looks
+                      dimmed. */}
+                  <span class="veil" aria-hidden="true"></span>
+                  <span class="plus" aria-hidden="true"></span>
+                </button>
               )}
             </figure>
           ))}
@@ -121,11 +163,64 @@ const soundLabel =
       )
     }
 
+    {/* WARNING: THE SUMMARY IS NOT ON THE PAGE, AND IT IS NOT HIDDEN ON IT
+        EITHER (editor, 2026-09-12: "keep it for SEO but do not show it").
+        Text that is in the markup but kept out of sight with CSS is exactly
+        what Google's spam policy calls hidden text, and it risks the page
+        rather than helping it. The summary already reaches every place a
+        search engine or a share preview reads it from, none of them visible:
+        <meta name="description"> and og:/twitter:description (Base.astro, from
+        the `description` prop above) and CreativeWork.description in the
+        JSON-LD (seo/pages.ts). Do not add it back as a visually-hidden block. */}
+
     <div class="container body-grid">
       <div class="body" data-reveal>
         {project.body[locale].map((p) => <p>{p}</p>)}
       </div>
     </div>
+
+    {/* WARNING: THIS FIELD MUST BE IN THE MARKUP, NOT BUILT BY THE SCRIPT.
+        Astro scopes a component's styles with a per-component attribute, and an
+        element created with `document.createElement` never carries it - so none
+        of the rules below reach it. Measured when it was built in the script:
+        background `rgba(0,0,0,0)`, `z-index: auto`, the picture stretched to
+        1440x809 with `object-fit: fill`. It was a transparent, unlayered,
+        distorted layer that still "worked" well enough to pass a naive test.
+        (Same class of trap as portalling to <body> in the panel, §5.23t.)
+
+        It is `hidden` until asked for, so with no JavaScript it is simply not
+        there - and the pictures below stay ordinary links to their own files.
+
+        The close label is written here rather than added as an interface
+        string: a new key is missing from every existing database (§5.186), and
+        the editor has nothing to say about the word "close" on a control they
+        cannot reposition. It still follows the page's language, because a
+        screen reader is the only thing that reads it. */}
+    {media.length > 0 && (
+      <div class="full" id="full" role="dialog" aria-modal="true" hidden>
+        <img id="full-img" alt="" decoding="async" />
+        {/* One player for every film, like one <img> for every picture. It is
+            NOT muted: opening a film is the deliberate act that asks for sound.
+            `controls` because a film, unlike a picture, needs seek and volume. */}
+        <video id="full-video" controls playsinline preload="metadata" hidden></video>
+        {/* The arrows are on screen, not only on the keyboard: a visitor with
+            a mouse has no way to guess that the arrow keys do anything, and on
+            a phone there is no keyboard at all. They are hidden when a project
+            carries a single picture - a control that cannot move is noise. */}
+        <button type="button" class="full-nav prev" id="full-prev"
+          aria-label={locale === 'tr' ? 'Önceki görsel' : 'Previous image'}>
+          <span aria-hidden="true">&#10094;</span>
+        </button>
+        <button type="button" class="full-nav next" id="full-next"
+          aria-label={locale === 'tr' ? 'Sonraki görsel' : 'Next image'}>
+          <span aria-hidden="true">&#10095;</span>
+        </button>
+        <span class="full-count" id="full-count" aria-live="polite"></span>
+        <button type="button" class="full-close" id="full-close" aria-label={locale === 'tr' ? 'Kapat' : 'Close'}>
+          &#10005;
+        </button>
+      </div>
+    )}
   </article>
 </Base>
 
@@ -187,76 +282,194 @@ const soundLabel =
 </script>
 
 <script>
+  /* ================= FULL SCREEN =================
+     Measured on the reference: clicking a picture lays a near-opaque dark field
+     over the page with the whole photograph centred on it.
+
+     WARNING: THE FIELD IS IN THE MARKUP AND THERE IS ONLY ONE. Fourteen
+     pictures would otherwise mean fourteen fixed layers, each with its own copy
+     of the image; and one built HERE would miss Astro's scoped styles entirely
+     (see the note next to it).
+
+     WARNING: `contain`, NOT `cover`. The wall may crop when an editor asks for
+     a ratio; this view exists to show the picture whole, which is the opposite. */
+  const field = document.getElementById('full');
+  const shot = document.getElementById('full-img') as HTMLImageElement | null;
+  const player = document.getElementById('full-video') as HTMLVideoElement | null;
+  const closeBtn = document.getElementById('full-close');
+  const prevBtn = document.getElementById('full-prev');
+  const nextBtn = document.getElementById('full-next');
+  const count = document.getElementById('full-count');
+  const openers = Array.from(document.querySelectorAll<HTMLButtonElement>('.detail .zoom'));
+
+  if (field && shot && closeBtn && prevBtn && nextBtn && openers.length) {
+    /* WARNING: THE INDEX IS THE STATE, NOT THE SOURCE STRING. Two pictures in
+       one project can point at the same file (a cover repeated in the strip),
+       and "find the current src" would then jump to the first of them and get
+       stuck there. */
+    let at = -1;
+
+    /* A single picture has nowhere to go, so the arrows and the counter stay
+       out of the way entirely rather than sitting there disabled. */
+    const many = openers.length > 1;
+    if (!many) {
+      prevBtn.hidden = true;
+      nextBtn.hidden = true;
+      if (count) count.hidden = true;
+    }
+
+    /* Stops the film and lets go of the file, so a closed or stepped-away
+       field is not still downloading or playing sound behind the page. */
+    const stopFilm = () => {
+      if (!player) return;
+      player.pause();
+      player.removeAttribute('src');
+      player.removeAttribute('poster');
+      player.load();
+      player.hidden = true;
+    };
+
+    const render = () => {
+      const btn = openers[at];
+      if (!btn) return;
+      const src = btn.dataset.full || '';
+      const film = btn.dataset.kind === 'video' && player;
+      if (film) {
+        shot.hidden = true;
+        shot.removeAttribute('src');
+        player.hidden = false;
+        if (btn.dataset.poster) player.poster = btn.dataset.poster;
+        else player.removeAttribute('poster');
+        player.src = src;
+        player.muted = false;
+        player.play().catch(() => {
+          /* A browser that refuses sound without a gesture still shows the
+             controls; the visitor presses play. */
+        });
+      } else {
+        stopFilm();
+        shot.hidden = false;
+        if (src) shot.src = src;
+        shot.alt = btn.getAttribute('aria-label') || '';
+      }
+      if (count && many) count.textContent = at + 1 + ' / ' + openers.length;
+    };
+
+    /* The silent previews on the wall pause while the field is open - a film
+       with sound in front and six decoders behind it is wasted work - and the
+       ones that were playing resume on close. */
+    const wallFilms = Array.from(document.querySelectorAll<HTMLVideoElement>('.detail .media video'));
+    let resumed: HTMLVideoElement[] = [];
+
+    /* Wrapping, not stopping: at the last picture the next arrow returns to the
+       first. A gallery this size is a loop, and an arrow that silently does
+       nothing reads as broken. */
+    const step = (delta: number) => {
+      if (!many || at < 0) return;
+      at = (at + delta + openers.length) % openers.length;
+      render();
+    };
+
+    /* Where to put focus back: returning it to the picture that was opened is
+       the difference between "the layer closed" and "I am lost on the page".
+       It follows the STEPPING too - close after three arrows and focus lands
+       on the picture actually being looked at. */
+    const show = (i: number) => {
+      if (i < 0 || i >= openers.length) return;
+      at = i;
+      render();
+      field.hidden = false;
+      /* WARNING: DO NOT WAIT FOR A FRAME HERE. A transition cannot run from a
+         state the element was never painted in, so the naive fix is to add the
+         class inside `requestAnimationFrame` - but rAF does not fire in a
+         backgrounded tab, and then the layer sits at `hidden = false` with
+         `opacity: 0` for ever: invisible, and (but for `pointer-events: none`)
+         in front of the page. Measured: opened by script with the window
+         behind another, `is-open` never arrived and the counter read "2 / 4"
+         on a layer nobody could see.
+         Forcing a reflow makes the browser paint the closed state NOW, so the
+         class can go on in the same tick and the transition still animates
+         (same trick as the project filter, §5.192). */
+      void field.offsetWidth;
+      field.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+      resumed = wallFilms.filter((f) => !f.paused);
+      for (const f of resumed) f.pause();
+      closeBtn.focus();
+    };
+
+    const hide = () => {
+      if (field.hidden) return;
+      field.classList.remove('is-open');
+      document.body.style.overflow = '';
+      stopFilm();
+      for (const f of resumed) f.play().catch(() => {});
+      resumed = [];
+      /* The source is dropped only after the fade: clearing it at once would
+         blank the layer mid-transition. */
+      window.setTimeout(() => {
+        if (field.classList.contains('is-open')) return;
+        field.hidden = true;
+        shot.removeAttribute('src');
+      }, 320);
+      openers[at]?.focus();
+      at = -1;
+    };
+
+    openers.forEach((btn, i) => btn.addEventListener('click', () => show(i)));
+    closeBtn.addEventListener('click', hide);
+    prevBtn.addEventListener('click', () => step(-1));
+    nextBtn.addEventListener('click', () => step(1));
+
+    /* The field closes on a click, but a click ON THE PICTURE or an arrow must
+       not: those are the two things someone actually aims at in here. */
+    field.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t === shot || t === player || t.closest('.full-nav') || t.closest('.full-close')) return;
+      hide();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (field.hidden) return;
+      /* WARNING: THE LISTENER IS ON THE DOCUMENT, SO IT MUST CHECK FIRST.
+         Without the guard above, the arrow keys would step through pictures
+         while the layer is closed - and Escape is already global. */
+      if (e.key === 'Escape') { hide(); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+    });
+  }
+</script>
+
+<script>
   /* ================= FILM =================
-     A film on this page behaves like the pictures around it: it starts on its
-     own, silently, and stops when it scrolls away. Sound is a separate,
-     deliberate act — asking for it goes full screen WITH sound, and leaving
-     full screen mutes it again, so scrolling back up never puts audio into a
-     room nobody asked.
+     A film on the wall is a PREVIEW: it starts on its own, silently, and stops
+     when it scrolls away. Watching it - with sound, controls, at full size -
+     happens in the full-screen field, exactly like a picture (§5.227).
 
      WARNING: `autoplay` ALONE IS THE WRONG TOOL. It starts every film on the
-     page at load — on a project with six of them that is six decoders and six
+     page at load - on a project with six of them that is six decoders and six
      downloads running behind the fold. Tying playback to visibility is also
      what makes stopping automatic. */
-  const films = Array.from(document.querySelectorAll<HTMLVideoElement>('.detail video'));
+  const films = Array.from(document.querySelectorAll<HTMLVideoElement>('.detail .media video'));
 
-  if (films.length) {
-    const badge = (film: HTMLVideoElement) =>
-      film.closest('figure')?.querySelector('button');
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      /* Someone who asked the system for less movement gets a still frame and
-         the normal controls — not a film that starts anyway. */
-      for (const film of films) {
-        film.controls = true;
-        badge(film)?.remove();
-      }
-    } else {
-      const watcher = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            const film = entry.target as HTMLVideoElement;
-            // A film taken full screen keeps playing even while the page behind
-            // it reports the element as off screen.
-            if (document.fullscreenElement === film) continue;
-            if (entry.isIntersecting) film.play().catch(() => {});
-            else film.pause();
-          }
-        },
-        { threshold: 0.25 }
-      );
-      for (const film of films) watcher.observe(film);
-    }
-
-    const withSound = (film: HTMLVideoElement) => {
-      film.muted = false;
-      film.controls = true;
-      film.play().catch(() => {});
-      /* iOS gives a <video> no Fullscreen API at all, only its own player. */
-      const ios = film as HTMLVideoElement & { webkitEnterFullscreen?: () => void };
-      if (film.requestFullscreen) film.requestFullscreen().catch(() => {});
-      else if (ios.webkitEnterFullscreen) ios.webkitEnterFullscreen();
-    };
-
-    for (const film of films) {
-      film.addEventListener('click', () => withSound(film));
-      badge(film)?.addEventListener('click', (event) => {
-        event.preventDefault();
-        withSound(film);
-      });
-    }
-
-    /* Leaving full screen puts every film back the way the page found it.
-       Listening on the document rather than per element also covers Escape. */
-    const restore = () => {
-      for (const film of films) {
-        if (document.fullscreenElement === film) continue;
-        film.muted = true;
-        film.controls = false;
-      }
-    };
-    document.addEventListener('fullscreenchange', restore);
-    document.addEventListener('webkitendfullscreen', restore, true);
+  /* Someone who asked the system for less movement gets a still frame; the
+     film still opens, and plays only when they press play. */
+  if (films.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const field = document.getElementById('full');
+    const watcher = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const film = entry.target as HTMLVideoElement;
+          // While the field is open the wall stays paused (the field resumes it).
+          if (field && !field.hidden) continue;
+          if (entry.isIntersecting) film.play().catch(() => {});
+          else film.pause();
+        }
+      },
+      { threshold: 0.25 }
+    );
+    for (const film of films) watcher.observe(film);
   }
 </script>
 
@@ -285,77 +498,49 @@ const soundLabel =
     font-size: var(--t-hero);
   }
 
-  .excerpt {
-    max-width: 38rem;
-    margin-top: 1rem;
-    font-size: clamp(1.05rem, 1.8vw, 1.3rem);
-    color: var(--muted);
+  /* The bar gets air on both sides the way the reference's `&nbsp;|` does,
+     and a lighter weight so it separates rather than shouts. */
+  .sep {
+    margin-inline: 0.4em;
+    font-weight: 400;
   }
 
-  /* The facts sit UNDER THE TITLE, where a project's identity is read: year,
-     place, size. The row count is content, not layout — a project may carry
-     three fields or nine — so `auto-fit` lays out however many there are and
-     folds them onto more lines as the viewport narrows, with no breakpoint
-     having to know the number. `min()` keeps a single column from overflowing
-     a phone. */
-  .meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
-    gap: 1.5rem clamp(1.25rem, 2.5vw, 2.5rem);
-    border-top: 1px solid var(--line);
-    margin-top: clamp(2rem, 4vw, 3rem);
-    padding-top: 1.5rem;
-  }
-
-  .meta > div {
-    min-width: 0;
-  }
-
-  .meta dt {
-    font-size: var(--t-label);
-    letter-spacing: 0.18em;
+  /* Smaller and quieter than the headline: it qualifies the work, it does not
+     compete with it. Same small-caps voice as the captions on the grid. */
+  .kicker {
+    margin-top: 0.7rem;
+    font-family: var(--font-display);
+    font-size: clamp(0.8rem, 0.95vw, 0.92rem);
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted);
   }
 
-  .meta dd {
-    margin-top: 0.35rem;
-    font-family: var(--font-display);
-    font-weight: 500;
-    overflow-wrap: anywhere;
-  }
+  /* ================= THE WALL =================
+     ITEMS ARE PACKED, NOT LINED UP. A grid places a whole ROW at a time, so
+     pictures of different heights all begin on the same line and the next row
+     begins below the tallest of them - a ladder with ragged bottoms. Measured
+     on the reference: its pictures share one width and start at many different
+     heights, each following the SHORTEST column. No CSS does that on its own
+     today (`grid-template-rows: masonry` is not shipped, and `columns` fills
+     column one to the bottom first, which puts picture two under picture one -
+     the wrong reading order). So the grid gets a very fine row track and each
+     item is told how many of them it needs; the script below is the only part
+     that measures.
 
-  /* ---- The media strip ----
-     ITEMS ARE PACKED, NOT LINED UP. `align-items: start` alone was not enough
-     and the earlier note here was wrong about it: a grid still places a whole
-     ROW at a time, so three pictures of different heights all began on the same
-     line and the next three began below the tallest of them. That is a ladder
-     with ragged bottoms — the eye reads rows. Measured on the reference this was
-     compared against, its pictures share one width (266px) but start at nine
-     different heights: 273, 273, 273, 530, 592, 655, 657, 903, 966. Each one
-     follows the shortest column, which is what makes the wall look composed
-     rather than tabulated.
-
-     No CSS does that on its own today: `grid-template-rows: masonry` is not
-     shipped, and `columns` fills the first column to the bottom before starting
-     the second, which puts picture two under picture one instead of beside it —
-     wrong reading order for a gallery. So the grid is given a very fine row
-     track and each item is told how many of them it needs; auto-placement then
-     packs exactly as masonry does, in document order, with no crop and no
-     stretch. The script below is the only part that has to measure.
-
-     WARNING: WITHOUT JAVASCRIPT THIS MUST STILL BE A GALLERY. The row track and
-     the spans only apply under `html.js`; everything else falls back to the
-     plain row grid, which is merely tabular rather than broken. */
+     WARNING: WITHOUT JAVASCRIPT THIS MUST STILL BE A GALLERY. The row track
+     and the spans apply only under `html.js`; everything else falls back to a
+     plain row grid - tabular rather than broken. */
   .media {
     display: grid;
     grid-template-columns: repeat(var(--media-cols, 3), minmax(0, 1fr));
     gap: var(--media-gap);
     align-items: start;
     grid-auto-flow: dense;
-    padding-top: clamp(2.25rem, 5vw, 4rem);
-    --media-gap: clamp(0.85rem, 1.5vw, 1.4rem);
-    /* The track the script counts in. Fine enough that rounding up costs a
+    padding-top: clamp(1.75rem, 4vw, 3rem);
+    --media-gap: clamp(0.7rem, 1.4vw, 1.25rem);
+    /* The track the script counts in: fine enough that rounding up costs a
        couple of pixels, coarse enough not to make hundreds of tracks. */
     --media-unit: 4px;
   }
@@ -367,12 +552,16 @@ const soundLabel =
 
   .item {
     grid-column: span var(--span, 1);
-    background: var(--soft);
+    background: var(--bg);
     overflow: hidden;
     position: relative;
     min-width: 0;
   }
 
+  /* WARNING: NOTHING IS CROPPED HERE - THAT IS THE WHOLE POINT OF THE WALL.
+     A ratio is applied only when an editor asks for one; a film always has one,
+     because its real shape is unknown until the file loads and the page must
+     not jump. */
   .item img,
   .item video {
     display: block;
@@ -380,11 +569,6 @@ const soundLabel =
     height: auto;
   }
 
-  /* WARNING: A RATIO IS A CROP. Without one a picture keeps its own shape and
-     nothing is cut off — the covers here run from 1.26:1 to 3.29:1, and forcing
-     them all into one box would keep a slice of the widest. A ratio is applied
-     only when an editor asks for one; a film always has one, because its real
-     shape is unknown until the file loads and the page must not jump. */
   .item[data-ratio] img,
   .item video {
     aspect-ratio: var(--ratio, 16 / 9);
@@ -392,36 +576,233 @@ const soundLabel =
     object-fit: cover;
   }
 
-  .item video {
-    cursor: pointer;
+  /* A film is marked as one: a triangle where a picture has its plus. */
+  .plus.play::before {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform: translate(-40%, -50%);
+    background: none;
+    border-style: solid;
+    border-width: 0.7rem 0 0.7rem 1.15rem;
+    border-color: transparent transparent transparent currentColor;
   }
 
-  /* The badge is a real button, not decoration: without it a film with no
-     controls is a picture that happens to move, and the sound cannot be
-     reached with a keyboard at all. */
-  .sound {
-    position: absolute;
-    left: clamp(0.6rem, 1.2vw, 1rem);
-    bottom: clamp(0.6rem, 1.2vw, 1rem);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.85rem;
+  .plus.play::after {
+    content: none;
+  }
+
+  /* ---- the opener ---- */
+  .zoom {
+    appearance: none;
     border: 0;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--ink) 72%, transparent);
-    color: var(--bg);
+    padding: 0;
+    margin: 0;
+    background: none;
+    display: block;
+    width: 100%;
+    cursor: zoom-in;
+    position: relative;
+    color: #fff;
+  }
+
+  /* Measured on the reference: rgb(20,22,24) at 0.5, opacity 0 -> 1 over 0.2s.
+     A veil ALONE reads as "dimmed"; the mark is what says "this opens". */
+  .veil,
+  .plus {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease-in-out;
+  }
+
+  .veil {
+    inset: 0;
+    background: rgba(16, 16, 16, 0.5);
+  }
+
+  .plus {
+    top: 50%;
+    left: 50%;
+    width: 1.4rem;
+    height: 1.4rem;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Two rules instead of a glyph: a font-dependent "+" shifts with whatever
+     typeface loads, and an icon file would be one request for two lines. */
+  .plus::before,
+  .plus::after {
+    content: '';
+    position: absolute;
+    inset: 50% 0 auto 0;
+    height: 1.5px;
+    background: currentColor;
+  }
+
+  .plus::after {
+    inset: 0 50% auto auto;
+    width: 1.5px;
+    height: 100%;
+  }
+
+  @media (hover: hover) {
+    .zoom:hover .veil,
+    .zoom:hover .plus {
+      opacity: 1;
+    }
+  }
+
+  /* Keyboard focus must show the same thing the pointer does, otherwise the
+     only cue that a picture opens is unavailable to it. */
+  .zoom:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .zoom:focus-visible .veil,
+  .zoom:focus-visible .plus {
+    opacity: 1;
+  }
+
+  /* ================= FULL SCREEN =================
+     Measured on the reference: a near-opaque dark field (rgba(20,22,24,.95))
+     with the picture centred on it. `contain` here, not `cover`: this view
+     exists to show the whole photograph, which is the opposite of the crop the
+     wall may apply. */
+  .full {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    /* WARNING: `1fr` IS `minmax(auto, 1fr)`, AND `auto` IS THE CONTENT'S OWN
+       SIZE - the grid track grows to the picture and `max-height: 100%` then
+       measures against that oversized track. Measured with a portrait file:
+       the image came out 1344x1792 inside a 900px viewport, i.e. the layer
+       scrolled. `minmax(0, …)` is the grid equivalent of the `flex-basis: 0`
+       trap in §5.189. */
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    place-items: center;
+    padding: clamp(1rem, 4vw, 3rem);
+    background: rgba(16, 16, 16, 0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .full.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .full img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transform: scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .full.is-open img {
+    transform: none;
+  }
+
+  /* The film takes the picture's place and the picture's size rules: whole,
+     centred, never larger than the field. */
+  .full video {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    background: #000;
+  }
+
+  .full video[hidden],
+  .full img[hidden] {
+    display: none;
+  }
+
+  /* The arrows sit against the edges, vertically centred, and are deliberately
+     LARGE: this is the one control someone taps repeatedly, and on a phone a
+     44px target is the floor. They also stay clear of the picture's middle so
+     a click there still closes the layer. */
+  .full-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3.25rem;
+    height: 4.5rem;
+    display: grid;
+    place-items: center;
+    appearance: none;
+    border: 0;
+    background: none;
+    color: #fff;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.2s ease;
+  }
+
+  .full-nav:hover,
+  .full-nav:focus-visible {
+    opacity: 1;
+  }
+
+  .full-nav.prev {
+    left: clamp(0.25rem, 1.5vw, 1.5rem);
+  }
+
+  .full-nav.next {
+    right: clamp(0.25rem, 1.5vw, 1.5rem);
+  }
+
+  /* Where am I in the set. `aria-live` on the element means a screen reader
+     hears "3 / 14" when the arrows move, which is the only way that
+     information reaches someone who cannot see the picture change. */
+  .full-count {
+    position: absolute;
+    bottom: clamp(0.75rem, 2vw, 1.5rem);
+    left: 50%;
+    transform: translateX(-50%);
     font-family: var(--font-display);
     font-size: var(--t-label);
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background 0.25s ease;
+    letter-spacing: 0.16em;
+    color: #fff;
+    opacity: 0.7;
   }
 
-  .sound:hover {
-    background: var(--ink);
+  /* The close control is a real button in the corner AND the field itself is
+     clickable; Escape does the same. Three ways out, because a full-screen
+     layer with one exit is a trap on a touch device. */
+  .full-close {
+    position: absolute;
+    top: clamp(0.75rem, 2vw, 1.5rem);
+    right: clamp(0.75rem, 2vw, 1.5rem);
+    width: 2.75rem;
+    height: 2.75rem;
+    display: grid;
+    place-items: center;
+    appearance: none;
+    border: 0;
+    background: none;
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+
+  .full-close:hover,
+  .full-close:focus-visible {
+    opacity: 1;
   }
 
   /* Left-aligned like everything above it: the words start on the same edge as
@@ -437,16 +818,15 @@ const soundLabel =
     font-size: 1.05rem;
   }
 
-  /* An item can never span more columns than the grid has: a `span 3` left in
-     place on a two-column grid opens an implicit third track and pushes the
-     strip off the side of the page. */
+  /* Three columns on a wide screen (editor, 2026-09-13 - the reference ran 4,
+     the editor asked for 3 at the same width), TWO at 900px and below, ONE at
+     560px (the reference measured 338px at 768 and 317px at 390). An item
+     can never span more columns than the grid has - a `span 2` left in place
+     on a one-column grid opens an implicit second track and pushes the wall
+     off the side of the page. */
   @media (max-width: 900px) {
     .media {
       --media-cols: 2;
-    }
-
-    .item {
-      grid-column: span 1;
     }
 
     .item[data-wide] {
@@ -454,7 +834,7 @@ const soundLabel =
     }
   }
 
-  @media (max-width: 620px) {
+  @media (max-width: 560px) {
     .media {
       --media-cols: 1;
     }
@@ -463,9 +843,6 @@ const soundLabel =
     .item[data-wide] {
       grid-column: span 1;
     }
-
-    .meta {
-      gap: 1.25rem;
-    }
   }
+
 </style>

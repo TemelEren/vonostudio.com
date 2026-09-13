@@ -92,7 +92,13 @@ export interface ProjectMediaItem {
 
 export interface Project {
   slug: string;
-  title: string;
+  /**
+   * A plain string reads the same in both languages (every project written
+   * before titles were translatable); a { tr, en } pair is translated.
+   * Never print this directly: db/projectMeta.ts → projectTitle() picks the
+   * language and falls back to the other side when one is empty.
+   */
+  title: string | Localized;
   /**
    * The meta strip. Absent on projects written before it became editable —
    * those fall back to the five fields below. See db/projectMeta.ts; never read

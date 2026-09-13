@@ -1,5 +1,6 @@
 ---
-import { useTranslations, type Locale } from '../i18n/ui';
+import { useTranslations, localePath, type Locale } from '../i18n/ui';
+import { POLICY_PATH } from '../consent/cookies';
 
 interface Props {
   locale: Locale;
@@ -7,11 +8,23 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 const year = new Date().getFullYear();
+const metin = (key: Parameters<typeof t>[0], tr: string, en: string) => {
+  const ham = t(key);
+  return ham === key ? (locale === 'tr' ? tr : en) : ham;
+};
+/* WARNING: CONSENT MUST BE AS EASY TO WITHDRAW AS TO GIVE (§5.226). The notice
+   disappears once answered; this is the permanent way back to it, on every page. */
+const tercihler = metin('cookie.settings', 'Çerez tercihleri', 'Cookie preferences');
+const politika = metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Policy');
 ---
 
 <footer class="footer">
   <div class="container top">
     <span>© {year} Vono Studio — {t('footer.rights')}</span>
+    <span class="yasal">
+      <a href={localePath(locale, POLICY_PATH[locale])}>{politika}</a>
+      <button type="button" data-consent-open>{tercihler}</button>
+    </span>
     <span class="credit">vonostudio.com</span>
   </div>
 </footer>
@@ -28,5 +41,28 @@ const year = new Date().getFullYear();
     padding-block: 2rem;
     font-size: 0.8rem;
     color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  .yasal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+  }
+
+  .yasal a,
+  .yasal button {
+    color: inherit;
+    font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-color: var(--line);
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  }
+
+  .yasal a:hover,
+  .yasal button:hover {
+    color: var(--ink);
+    text-decoration-color: var(--ink);
   }
 </style>

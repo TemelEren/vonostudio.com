@@ -7,27 +7,44 @@
   --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --pad: clamp(1.25rem, 4vw, 4rem);
-  /* The bar carries the mark and the menu; measured against the reference its
-     own header block runs ~134px against our 80. 88px is the middle: the logo
-     below sits at ~31% of it, which is where a wordmark reads as the page's
-     signature rather than as a caption. */
-  --nav-h: 5.5rem;
+  /* The bar carries the mark and the menu, and its height is what pushes both
+     of them down the page - the editor asked for exactly that ("move the top
+     menu a bit further down, like the example site", 2026-09-12).
+
+     Measured on the reference: its header block runs 134px (8.375rem) with the
+     menu vertically centred in it. 88px was chosen earlier as a middle ground;
+     this is now the reference's own figure, minus the 6px that the theme's
+     ceiling costs.
+
+     WARNING: 8rem IS THE THEME'S MAXIMUM (db/theme.ts clamps navH to 3-8, and
+     the panel ships the same range). Going to 8.375rem would put the default
+     OUTSIDE the range an editor can set, so the first time anyone touched any
+     layout field the bar would silently jump back down to 8. Raise both
+     clamps first if the extra 6px is ever wanted. */
+  --nav-h: 8rem;
 
   /* ---- Display type scale ----
      WARNING: THESE ARE ONE LADDER, NOT SIX INDEPENDENT NUMBERS. Shrinking a
-     single step collapses the rung below it: the section title and the service
-     titles used to sit at 72px and 41.6px, and cutting only the first would
-     have put them within a few pixels of each other. Measured at 1440px, the
-     page previously ran 88 / 72 / 64 / 44.8 / 41.6 / 30.4 - a heading 4.9x the
-     body text, where the reference this was compared against tops out at 33px
-     and 1.8x. The ladder below lands at 62 / 50 / 38 / 28 / 24: calmer than
-     before, still editorial rather than a copy of that reference. Change a step
-     and re-measure the whole ladder. */
-  --t-hero: clamp(2.2rem, 4.4vw, 3.85rem);
-  --t-section: clamp(1.85rem, 3.5vw, 3.1rem);
-  --t-display: clamp(1.35rem, 2.7vw, 2.4rem);
-  --t-item: clamp(1.15rem, 2vw, 1.75rem);
-  --t-item-sm: clamp(1.05rem, 1.7vw, 1.5rem);
+     single step collapses the rung below it - or inverts the ladder outright:
+     cutting --t-section to the reference's 33px while leaving --t-display at
+     38px would have made the SECTION heading smaller than the item headings
+     under it. Every rung moves together, and the order is re-measured after.
+
+     History, so the direction is not re-litigated: the page ran
+     88 / 72 / 64 / 44.8 / 41.6 / 30.4 (a heading 4.9x the body), then
+     62 / 50 / 38 / 28 / 24, and the editor still read the section titles as
+     "very large, they should be more proportionate and less attention
+     grabbing" (2026-09-12). Measured on the reference's own home page that
+     same day: its section headings are 33px on 18px body text - 1.83x. The
+     ladder below lands at 44 / 33 / 26.4 / 21.6 / 19.2 at 1440px on a 16px
+     body: the section rung now matches that reference exactly and the tallest
+     heading is 2.75x the body (it was 3.9x). Change a step and re-measure the
+     whole ladder - including that it still DESCENDS. */
+  --t-hero: clamp(1.7rem, 3.1vw, 2.75rem);
+  --t-section: clamp(1.45rem, 2.3vw, 2.05rem);
+  --t-display: clamp(1.15rem, 1.85vw, 1.65rem);
+  --t-item: clamp(1.05rem, 1.55vw, 1.35rem);
+  --t-item-sm: clamp(1rem, 1.35vw, 1.2rem);
   /* The bar reads as chrome, not as a whisper: 0.78rem/500 measured 12.48px
      against the reference's 14px/700, and tracking makes small type feel
      lighter still.
@@ -35,15 +52,23 @@
      WARNING: SIZE ALONE DOES NOT BUY PRESENCE — TRACKING GIVES IT BACK. The
      first correction went to 0.85rem/600/0.14em and measured 13.6px, still
      under the reference's 14px/700/0 while the page's own h1 sat at 61.6px:
-     a bar four and a half times smaller than the words under it. Every lever
-     moves together now — 15.2px, weight 700, tracking cut to 0.09em. Widening
-     the tracking again undoes the size. */
-  --t-nav: 0.95rem;
+     a bar four and a half times smaller than the words under it.
+
+     Now it IS the reference's number: 0.875rem = 14px, weight 700, and the
+     tracking finally goes to 0 like theirs (the editor asked for "the same
+     sizes as the example site", 2026-09-12). This is the FLOOR - 0.78rem was
+     already measured as too light, so a future cut needs a new measurement,
+     not a hunch. */
+  --t-nav: 0.875rem;
   /* Small caps that label a thing rather than say it: the eyebrow over the mail
      address, the column headings under it. Measured before, the same role was
      being set at 12.8px in one place and 12px two lines down - not a hierarchy,
      just drift. One value, one place. */
   --t-label: 0.75rem;
+
+  /* How far below the fixed bar a section heading lands when a menu link
+     jumps to it (see .section). */
+  --anchor-gap: clamp(1.5rem, 3vw, 2.5rem);
 
   /* How long the project filter takes to change the grid. The theme overrides
      it (db/theme.ts); the value here is what an installation with no theme row
@@ -78,14 +103,35 @@ body {
   overflow-x: clip;
 }
 
+/* WARNING: EVERY HEADING NOW SPEAKS IN THE BAR'S VOICE - bold, display face,
+   upper case (editor: "the section headings and project titles should be bold,
+   in the menu's font, and all set in capitals", 2026-09-12). The face was
+   already --font-display, the same one the menu uses; what changed is weight
+   500 -> 700 and the capitals.
+
+   WARNING: NEGATIVE TRACKING AND CAPITALS FIGHT EACH OTHER. -0.02em was tuned
+   for mixed-case display type, where it closes the gaps a lower-case x-height
+   opens; on capitals every glyph is full height and the same value jams them
+   together. It goes to 0, which is exactly what the menu uses (§5.213).
+
+   WARNING: THIS IS HEADINGS ONLY, NOT "ALL TEXT". Setting body copy in
+   capitals would cost the one thing paragraphs are for - being read - and the
+   reference does not do it either (measured: its own body runs 18px in mixed
+   case). The rule therefore keys off h1-h4 and leaves paragraphs, summaries
+   and captions alone.
+
+   Turkish is the reason `lang` matters here: `text-transform: uppercase`
+   follows the document's language, so "iletişim" becomes "İLETİŞİM" and not
+   "ILETIŞIM" (§6). Base.astro sets lang=tr-TR / en-US. */
 h1,
 h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 a {
@@ -124,13 +170,83 @@ button {
 }
 
 .section {
-  padding-block: clamp(5rem, 10vw, 9rem);
+  /* The top padding lives in a variable because the anchor offset below is
+     computed from it. Every rule that changes a section's top padding sets
+     --pt, not padding-top - otherwise the heading lands under the bar again. */
+  --pt: clamp(5rem, 10vw, 9rem);
+  padding-block: var(--pt) clamp(5rem, 10vw, 9rem);
+  /* WARNING: A JUMP LANDS THE HEADING UNDER THE BAR, NOT THE SECTION'S EDGE
+     (editor, 2026-09-13: "pressing Services leaves its heading hidden under the
+     menu bar"). Measured: a section after the references has 56px of top
+     padding and the fixed bar is 128px, so the browser's plain jump put the
+     title 72px under the bar. The margin is solved for the heading: it lands
+     --anchor-gap below the bar whatever the section's own padding is. The nav
+     script centres the section on a click; this is what a direct link
+     (/#hizmetler from a project page) and a browser without JS get. */
+  scroll-margin-top: calc(var(--nav-h) + var(--anchor-gap) - var(--pt));
 }
 
-.section + .section {
-  border-top: 1px solid var(--line);
+/* WARNING: NO RULE BETWEEN SECTIONS (editor, 2026-09-12: "remove the horizontal
+   divider lines between every heading"). `.section + .section` used to draw a
+   1px line; the rhythm is carried by the padding alone now. Do not bring the
+   line back through a component - the references strip had its own pair of
+   rules for the same reason and they went with it. */
+
+/* WARNING: TWO FULL PADDINGS MEET HERE, AND THE REFERENCES ARE A BAND, NOT A
+   CHAPTER. Measured at 1440px (editor, 2026-09-12: "the references could sit
+   closer to the projects, there is a big gap"): the project grid ended 324px
+   above the references title - 144px of bottom padding and 144px of top
+   padding. A strip of logos under the portfolio reads as the
+   portfolio's footnote, so the pair is tightened on both sides of the rule.
+
+   Keyed on ADJACENCY, not on the section alone: the stacking order is the
+   editor's (§5.188). Moved elsewhere, the references take the ordinary rhythm
+   again instead of crowding whatever section ends up above them. */
+#projeler:has(+ #referanslar) {
+  padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
 }
 
+#projeler + #referanslar {
+  --pt: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+/* The same on the band's other side (editor, 2026-09-12: "there is a lot of
+   space under the logos down to the services"). The references are a strip,
+   so whatever section follows them starts closer too. Keyed on the band
+   itself rather than on a named neighbour: the order is the editor's (§5.188). */
+#referanslar {
+  padding-bottom: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+#referanslar + .section {
+  --pt: clamp(2rem, 4vw, 3.5rem);
+}
+
+/* WARNING: ABOUT AND CONTACT ARE READ AS ONE SCREEN (editor, 2026-09-13: "the
+   references come up together with the services, do the same for About - bring
+   the contact section with it"). Two full paddings (288px at 1440) left the
+   contact heading below the fold after a jump to About. The pair is tightened
+   to 88px at 1920 (measured: at 144px the mail note ran 19px past a 1080
+   screen), and --jump-with-next tells the nav script to frame
+   the two together (Nav.astro). Keyed on ADJACENCY: reordered in the panel
+   (§5.188) the sections take the ordinary rhythm again. */
+#hakkimizda:has(+ #iletisim) {
+  padding-bottom: clamp(1.5rem, 3vw, 2.75rem);
+  --jump-with-next: 1;
+}
+
+#hakkimizda + #iletisim {
+  --pt: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+/* WARNING: THE 400 THAT USED TO BE HERE IS GONE, AND IT WAS ASKED FOR BOTH
+   WAYS ON THE SAME DAY. §5.213 dropped section titles to 400 because they read
+   as "too large, less attention grabbing" - but the size came down in that
+   same turn (50 -> 33px), and with the size settled the editor asked for the
+   bar's voice instead: bold and capitalised. Capitals at 700 on a 33px line
+   read as a LABEL for the section rather than as a second headline, which is
+   the same effect 400 was reaching for. The size is still the thing doing the
+   work; do not put the size back up. */
 .section-title {
   font-size: var(--t-section);
 }
@@ -172,13 +288,24 @@ button {
 /* Logo sizing lives here because Astro-scoped styles can't reach into the
    Logo component's SVG from parent components. */
 .nav-logo {
-  /* WARNING: A WORDMARK IS NOT A LABEL. At 1.05rem this measured 64x17px in an
-     80px bar - barely three pixels taller than the menu text beside it, so the
-     studio's name read as one more link. The reference's mark is 80px tall in a
-     ~134px header; ours is horizontal so it cannot match that height, but 1.6rem
-     (~26px, ~97px wide) puts it a clear step above the 15px menu and roughly a
-     third of the bar. Re-measure the pair together if either changes. */
-  height: 1.6rem;
+  /* WARNING: A WORDMARK IS NOT A LABEL, AND IT CANNOT COPY THEIR HEIGHT.
+     At 1.05rem this measured 64x17px in an 80px bar - barely three pixels
+     taller than the menu text beside it, so the studio's name read as one
+     more link.
+
+     The reference's mark is 80px tall in a ~134px header, i.e. 60% of the bar
+     and 5.7x its own menu text. Ours is a HORIZONTAL wordmark: at 60% of our
+     88px bar it would be ~53px tall and ~203px wide, which stops being a
+     signature and becomes a banner. The comparable measure for two marks of
+     different shape is AREA - theirs is 38x80 = 3040px².
+
+     1.85rem (~30px tall, ~113px wide) matched that area exactly, and the
+     editor still asked for bigger (2026-09-12). 2.4rem is ~38x147px: past
+     their area, 2.7x the 14px menu, and 44% of the 88px bar against their
+     60%. THE CEILING IS HALF THE BAR (64px at --nav-h: 8rem) - a mark
+     taller than that has nowhere to breathe and the bar starts to look like
+     a masthead. Re-measure the pair together if either changes. */
+  height: 2.4rem;
   width: auto;
   transition: opacity 0.15s ease;
   /* Glyphs shift outside the viewBox while following the cursor —
@@ -206,9 +333,16 @@ button {
   opacity: 0;
 }
 
-/* The first section starts right under the fixed nav now that there is no hero. */
-main > .section:first-child {
-  padding-top: calc(var(--nav-h) + clamp(2.5rem, 6vw, 5rem));
+/* The first section starts right under the fixed nav now that there is no hero.
+
+   WARNING: :first-of-type, NOT :first-child. The intro overlay is a <div> that
+   comes BEFORE the first section inside <main>, and once it is removed a
+   <script> can be first instead - :first-child never matched (measured,
+   2026-09-13): the first section kept the ordinary 144px padding, 16px of
+   air under a 128px bar at 1440 and the "PROJELER" heading cut off by the bar
+   at 1024 (102px). Only <section> counts for :first-of-type. */
+main > section.section:first-of-type {
+  --pt: calc(var(--nav-h) + clamp(2.5rem, 6vw, 5rem));
 }
 
 /* Keyboard users get a way past the fixed nav straight into the content. */

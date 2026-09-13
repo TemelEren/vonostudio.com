@@ -1,6 +1,8 @@
 ---
-import { useTranslations, type Locale } from '../i18n/ui';
-import { loadSettings } from '../db';
+import { useTranslations, localePath, type Locale } from '../i18n/ui';
+import { loadInstagram, loadSettings } from '../db';
+import { paragraphs } from '../i18n/plainText';
+import { POLICY_PATH } from '../consent/cookies';
 
 interface Props {
   locale: Locale;
@@ -12,7 +14,6 @@ const settings = loadSettings();
 const email = settings.email;
 const phone = settings.phone;
 const address = settings.address[locale];
-const socials = settings.social.map((s) => ({ label: s.name, href: s.link }));
 
 /* WARNING: THESE KEYS ARE NEWER THAN EVERY EXISTING DATABASE. Interface strings
    are a compile-time type taken from the seed, so t() is type-safe, but an
@@ -39,6 +40,36 @@ const govde = metin(
 const mailHref =
   `mailto:${email}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`;
 
+/* WARNING: THE LABEL SAYS WHAT THE THING IS, NOT AN INVITATION (editor,
+   2026-09-12: "next to the mail it says 'let's talk', it should say e-mail").
+   The old `contact.cta` ("Konuşalım") sat above the address as a slogan; next to
+   a phone block labelled "Telefon" it read as a mismatched pair. */
+const epostaEtiket = metin('contact.email.label', 'E-posta', 'E-mail');
+
+/* ---- The note under the mail address (editor, 2026-09-13) ----
+   Internship/job applications and brand collaborations, in the editor's words,
+   editable from the panel (Web Sitesi -> Arayüz Metinleri -> contact.email.note).
+
+   The value is PLAIN TEXT with line breaks, not HTML: the panel is a text box
+   and nothing typed there should be able to put markup on the page. A blank
+   line starts a new paragraph; inside a paragraph the first line is its lead
+   ("Staj ve iş başvuruları için,") when more lines follow.
+
+   WARNING: A LEAD LEFT ON ITS OWN IS STILL A LEAD. Written the natural way -
+   "…için," then an empty line then the sentence - the lead would be a one-line
+   paragraph of its own; a single line ending in a comma or colon is joined to
+   the paragraph after it.
+
+   Mail addresses in the text become mailto links: the note says "send it to
+   info@…", and a visitor on a phone should be able to tap it. The parsing is
+   shared with the cookie policy page (i18n/plainText.ts). */
+const notMetni = metin(
+  'contact.email.note',
+  'Staj ve iş başvuruları için,\n20 MB’ı geçmeyen PDF formatındaki CV ve portfolyo dosyalarınızı info@vonostudio.com adresine gönderebilirsiniz.\n\nMarka iş birlikleri için,\nÜrünlerinize ait fiziksel kartela ve numuneleri adresimize kargolayabilirsiniz. Dijital kataloglarınızı info@vonostudio.com adresine ileterek randevu talep edebilirsiniz.',
+  'For internships and job applications,\nplease send your CV and portfolio as PDF files of no more than 20 MB to info@vonostudio.com.\n\nFor brand collaborations,\nyou can ship physical swatches and samples of your products to our address. You can also send your digital catalogues to info@vonostudio.com to request an appointment.',
+);
+const notlar = paragraphs(notMetni);
+
 /* WARNING: TWO DIFFERENT SHAPES OF THE SAME NUMBER. `tel:` keeps the plus and
    the digits; wa.me takes DIGITS ONLY and reads them as a full international
    number. */
@@ -62,46 +93,79 @@ const yolHref = address
    and the pin on the map. */
 const yolEtiket = metin('contact.directions', 'Yol tarifi', 'Directions');
 
-/* ---- Contact form ----
-   The mail link answers "write to us"; the form answers "we will write to you",
-   and only the second one leaves a record. Everything typed here reaches the
-   ERP's inbox (Pazarlama → Potansiyel Müşteriler), so a website visit finally
-   becomes something the office can measure and follow up. */
-const f = {
-  baslik: metin('contact.form.title', 'Ya da formu doldurun', 'Or fill in the form'),
-  ad: metin('contact.form.name', 'Ad Soyad / Firma', 'Name / company'),
-  eposta: metin('contact.form.email', 'E-posta', 'E-mail'),
-  telefon: metin('contact.form.phone', 'Telefon (isteğe bağlı)', 'Phone (optional)'),
-  mesaj: metin('contact.form.message', 'Projeniz hakkında kısaca', 'Briefly about your project'),
-  ipucu: metin('contact.form.message.hint',
-    'Proje türü, konum, yaklaşık alan ve başlangıç zamanı yazarsanız ilk dönüşümüz daha isabetli olur.',
-    'Project type, location, approximate area and start date help us reply with something useful.'),
-  onay: metin('contact.form.consent',
-    'Aydınlatma metnini okudum; iletişim bilgilerimin talebimin değerlendirilmesi ve tarafıma dönüş yapılması amacıyla işlenmesini kabul ediyorum.',
-    'I have read the privacy notice and consent to my contact details being processed so that my enquiry can be assessed and answered.'),
-  aydinlatmaBaslik: metin('contact.form.privacy.title', 'Aydınlatma metni', 'Privacy notice'),
-  /* ⚠ UZUN METNİN DE YEDEĞİ OLMAK ZORUNDA. İlk yazımda yedek boş bırakıldı
-     ("tohumda zaten var") ve ölçüldü: mevcut veritabanında bu satır YOK, metin
-     boş döndü ve <details> hiç çizilmedi — yani onay kutusu "aydınlatma
-     metnini okudum" derken okunacak metin sayfada yoktu. Bir onayın dayanağı
-     boş olamaz; metin panelden değiştirilebilir ama hiçbir zaman KAYIP olmaz. */
-  aydinlatma: metin('contact.form.privacy',
-    "6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca veri sorumlusu VONO MİMARLIK TASARIM İNŞAAT'tır. Bu formla ilettiğiniz ad, e-posta, telefon ve mesaj içeriği yalnızca talebinizin değerlendirilmesi, tarafınıza dönüş yapılması ve gerekmesi hâlinde teklif hazırlanması amacıyla işlenir. Verileriniz bu amaç dışında kullanılmaz, üçüncü kişilerle paylaşılmaz ve yurt dışına aktarılmaz; kendi sunucumuzda saklanır ve talebiniz sonuçlandıktan sonra makul süre içinde silinir. Bu onay yalnızca talebinize dönüş içindir; tanıtım ve kampanya iletisi göndermemiz için ayrıca izniniz istenir. Kanunun 11. maddesi kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınızı yukarıdaki e-posta adresine yazarak kullanabilirsiniz.",
-    'Under Turkish Personal Data Protection Law no. 6698 the data controller is VONO MIMARLIK TASARIM INSAAT. The name, e-mail, phone number and message you send through this form are processed solely to assess and answer your enquiry and, where relevant, to prepare a proposal. They are not used for any other purpose, not shared with third parties and not transferred abroad; they are kept on our own server and deleted within a reasonable time after your enquiry is closed. This consent covers our reply only; separate permission is asked before we send any promotional message. You may exercise your rights under article 11 of the law - information, correction, deletion and objection - by writing to the e-mail address above.'),
-  gonder: metin('contact.form.submit', 'Talebi gönder', 'Send enquiry'),
-  gonderiliyor: metin('contact.form.sending', 'Gönderiliyor…', 'Sending…'),
-  tamam: metin('contact.form.ok',
-    'Teşekkürler, talebiniz bize ulaştı. En kısa sürede dönüş yapacağız.',
-    'Thank you, we have received your enquiry and will get back to you shortly.'),
-  hata: metin('contact.form.error',
-    'Talep gönderilemedi. Lütfen tekrar deneyin ya da doğrudan e-posta yazın.',
-    'The enquiry could not be sent. Please try again or e-mail us directly.'),
+/* ---- Social: a black-and-white mark per platform ----
+   Glyphs from Simple Icons (CC0), one 24x24 path each, painted with
+   `currentColor` so they follow the theme's ink instead of the brands' colours
+   - the editor asked for monochrome icons, and the page carries one colour
+   already (the map pin, §5.193).
+
+   WARNING: THE PLATFORM IS RECOGNISED, NOT ASSUMED. The editor types a name and
+   a link; the link's host decides first (a profile renamed "Instagram hesabı"
+   still points at instagram.com), the name second. A platform not in this list
+   is NOT given a lookalike glyph - it keeps its written name, because a wrong
+   logo sends the visitor somewhere they did not expect. */
+const IKON: Record<string, string> = {
+  instagram: 'M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077',
+  linkedin: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
+  pinterest: 'M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z',
+  facebook: 'M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z',
+  x: 'M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z',
+  youtube: 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
+  behance: 'M16.969 16.927a2.561 2.561 0 0 0 1.901.677 2.501 2.501 0 0 0 1.531-.475c.362-.235.636-.584.779-.99h2.585a5.091 5.091 0 0 1-1.9 2.896 5.292 5.292 0 0 1-3.091.88 5.839 5.839 0 0 1-2.284-.433 4.871 4.871 0 0 1-1.723-1.211 5.657 5.657 0 0 1-1.08-1.874 7.057 7.057 0 0 1-.383-2.393c-.005-.8.129-1.595.396-2.349a5.313 5.313 0 0 1 5.088-3.604 4.87 4.87 0 0 1 2.376.563c.661.362 1.231.87 1.668 1.485a6.2 6.2 0 0 1 .943 2.133c.194.821.263 1.666.205 2.508h-7.699c-.063.79.184 1.574.688 2.187ZM6.947 4.084a8.065 8.065 0 0 1 1.928.198 4.29 4.29 0 0 1 1.49.638c.418.303.748.711.958 1.182.241.579.357 1.203.341 1.83a3.506 3.506 0 0 1-.506 1.961 3.726 3.726 0 0 1-1.503 1.287 3.588 3.588 0 0 1 2.027 1.437c.464.747.697 1.615.67 2.494a4.593 4.593 0 0 1-.423 2.032 3.945 3.945 0 0 1-1.163 1.413 5.114 5.114 0 0 1-1.683.807 7.135 7.135 0 0 1-1.928.259H0V4.084h6.947Zm-.235 12.9c.308.004.616-.029.916-.099a2.18 2.18 0 0 0 .766-.332c.228-.158.411-.371.534-.619.142-.317.208-.663.191-1.009a2.08 2.08 0 0 0-.642-1.715 2.618 2.618 0 0 0-1.696-.505h-3.54v4.279h3.471Zm13.635-5.967a2.13 2.13 0 0 0-1.654-.619 2.336 2.336 0 0 0-1.163.259 2.474 2.474 0 0 0-.738.62 2.359 2.359 0 0 0-.396.792c-.074.239-.12.485-.137.734h4.769a3.239 3.239 0 0 0-.679-1.785l-.002-.001Zm-13.813-.648a2.254 2.254 0 0 0 1.423-.433c.399-.355.607-.88.56-1.413a1.916 1.916 0 0 0-.178-.891 1.298 1.298 0 0 0-.495-.533 1.851 1.851 0 0 0-.711-.274 3.966 3.966 0 0 0-.835-.073H3.241v3.631h3.293v-.014ZM21.62 5.122h-5.976v1.527h5.976V5.122Z',
+  tiktok: 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z',
+  whatsapp: 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z',
 };
 
-/* Set by the no-JS path: the API route sends the visitor back with ?talep=ok
-   (or =hata) and the message is rendered server-side, identical to the one the
-   script shows in place. */
-const talep = Astro.url.searchParams.get('talep');
+/* Host first, then the typed name. `x` is matched only as a whole host or name:
+   as a substring it is inside half the words there are. */
+const HOST: [RegExp, string][] = [
+  [/(^|\.)instagram\.com$/, 'instagram'],
+  [/(^|\.)linkedin\.com$/, 'linkedin'],
+  [/(^|\.)pinterest\.[a-z.]+$/, 'pinterest'],
+  [/(^|\.)(facebook\.com|fb\.com)$/, 'facebook'],
+  [/(^|\.)(x\.com|twitter\.com)$/, 'x'],
+  [/(^|\.)(youtube\.com|youtu\.be)$/, 'youtube'],
+  [/(^|\.)behance\.net$/, 'behance'],
+  [/(^|\.)tiktok\.com$/, 'tiktok'],
+  [/(^|\.)(wa\.me|whatsapp\.com)$/, 'whatsapp'],
+];
+const platform = (name: string, link: string): string => {
+  let host = '';
+  try {
+    host = new URL(link).hostname.toLowerCase();
+  } catch {
+    /* a malformed link is not a platform; the name may still be */
+  }
+  for (const [re, key] of HOST) if (host && re.test(host)) return key;
+  const ad = (name || '').trim().toLowerCase();
+  if (ad === 'x' || ad === 'twitter') return 'x';
+  return Object.keys(IKON).find((k) => k !== 'x' && ad.includes(k)) || '';
+};
+const socials = settings.social.map((s) => {
+  const key = platform(s.name, s.link);
+  return { label: s.name, href: s.link, path: key ? IKON[key] : '' };
+});
+
+/* ---- Instagram strip (§5.221) ----
+   The editor picks the posts in the panel (Web Sitesi → Instagram): an
+   uploaded film or picture plus the post's link. No row, or an empty one,
+   draws nothing - the section ends at the map exactly as before.
+
+   The handle beside the label comes from the Instagram account already listed
+   under social - typed once, not twice. */
+const insta = loadInstagram();
+const instaEtiket = metin('contact.instagram.label', 'Instagram', 'Instagram');
+const instaHesap = (() => {
+  const s = settings.social.find((x) => platform(x.name, x.link) === 'instagram');
+  if (!s) return null;
+  try {
+    const seg = new URL(s.link).pathname.split('/').filter(Boolean)[0];
+    return seg ? { href: s.link, ad: '@' + seg } : null;
+  } catch {
+    return null;
+  }
+})();
+
 /* WARNING: THE MAP IS DRIVEN BY THE ADDRESS, NOT BY COORDINATES. There are no
    coordinates in the content database and guessing a lat/lng would be inventing
    data that looks authoritative. This embed takes the address string that the
@@ -111,6 +175,25 @@ const talep = Astro.url.searchParams.get('talep');
 const haritaSrc = address
   ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
   : '';
+
+/* ---- The map waits for consent (§5.226) ----
+   WARNING: THE IFRAME IS NOT IN THE PAGE UNTIL THE VISITOR SAYS YES. Google's
+   embed sets Google's cookies the moment it loads, and a third-party cookie
+   needs consent (KVKK cookie guideline). `loading="lazy"` only postponed that
+   until the visitor scrolled here - it never asked. The frame now sits in a
+   <template>, which the browser parses but does not load; the consent script
+   (CookieConsent.astro) clones it in once the "external" category is granted.
+   Until then the block explains why it is empty and offers the two ways on:
+   load the map (which records the permission) or open directions on Google's
+   own site, which sets nothing on this page. Without JavaScript the template
+   never runs and the visitor gets the same explanation and link. */
+const haritaIzinMetni = metin(
+  'cookie.map.blocked',
+  'Harita Google tarafından sunulur ve Google’ın çerezlerini yerleştirir. Görmek için izin verin.',
+  'The map is served by Google and sets Google’s cookies. Allow it to see the map.',
+);
+const haritaYukleEtiket = metin('cookie.map.load', 'Haritayı yükle', 'Load the map');
+const politikaHref = localePath(locale, POLICY_PATH[locale]);
 ---
 
 <section class="section" id="iletisim">
@@ -119,15 +202,59 @@ const haritaSrc = address
       <h2 class="section-title">{t('contact.title')}</h2>
     </div>
 
-    <a class="big-mail" href={mailHref} data-reveal>
-      <span class="cta">{t('contact.cta')}</span>
-      <span class="mail-satir">
-        <span class="mail">{email}</span>
-        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <path d="M7 17 17 7M9 7h8v8" />
-        </svg>
-      </span>
-    </a>
+    {/* WARNING: THE FORM IS GONE (editor, 2026-09-12: "you can remove the
+        contact form"). Mail and phone now sit side by side as the two direct
+        ways in, at the same size. The site's /api/iletisim route and the ERP
+        inbox are left in place - nothing posts to them from this page any
+        more, so the "Web talepleri" inbox will stay empty until a form comes
+        back. */}
+    <div class="ust">
+      <div data-reveal>
+        <h4>{epostaEtiket}</h4>
+        <a class="big-mail" href={mailHref}>
+          <span class="mail">{email}</span>
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M7 17 17 7M9 7h8v8" />
+          </svg>
+        </a>
+        {
+          notlar.length > 0 && (
+            <div class="not">
+              {notlar.map((n) => (
+                <p>
+                  {/* WARNING: NO JSX IN THE FRONTMATTER - Astro compiles it as
+                      plain TypeScript and the page fails to render ("Expected >");
+                      `astro check` did not catch it. The pieces are drawn here. */}
+                  {n.lead.length > 0 && (
+                    <span class="lead">{n.lead.map((p) => (p.href ? <a href={p.href}>{p.text}</a> : p.text))}</span>
+                  )}
+                  {n.lines.map((satir) => (
+                    <span class="satir">{satir.map((p) => (p.href ? <a href={p.href}>{p.text}</a> : p.text))}</span>
+                  ))}
+                </p>
+              ))}
+            </div>
+          )
+        }
+      </div>
+      <div data-reveal>
+        <h4>{t('contact.phone.label')}</h4>
+        {/* The number is large like the mail but stays plain text: the two
+            buttons carry the actions, so the visitor chooses call or WhatsApp
+            rather than having the page decide what a tap on it means. */}
+        <p class="tel">{phone}</p>
+        <div class="dugmeler">
+          {telHref && <a class="dugme" href={telHref}>{metin('contact.call', 'Ara', 'Call')}</a>}
+          {
+            waHref && (
+              <a class="dugme" href={waHref} target="_blank" rel="noopener noreferrer">
+                {metin('contact.whatsapp', 'WhatsApp', 'WhatsApp')}
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </div>
 
     <div class="cols">
       <div data-reveal>
@@ -149,27 +276,18 @@ const haritaSrc = address
         }
       </div>
       <div data-reveal>
-        <h4>{t('contact.phone.label')}</h4>
-        <p class="tel">{phone}</p>
-        <div class="dugmeler">
-          {telHref && <a class="dugme" href={telHref}>{metin('contact.call', 'Ara', 'Call')}</a>}
-          {
-            waHref && (
-              <a class="dugme" href={waHref} target="_blank" rel="noopener noreferrer">
-                {metin('contact.whatsapp', 'WhatsApp', 'WhatsApp')}
-              </a>
-            )
-          }
-        </div>
-      </div>
-      <div data-reveal>
         <h4>{t('contact.social.label')}</h4>
-        <ul>
+        <ul class="sosyal">
           {
             socials.map((s) => (
               <li>
                 <a href={s.href} target="_blank" rel="noopener noreferrer">
-                  {s.label}
+                  {s.path && (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d={s.path} />
+                    </svg>
+                  )}
+                  <span class="ad">{s.label}</span>
                 </a>
               </li>
             ))
@@ -177,78 +295,27 @@ const haritaSrc = address
         </ul>
       </div>
     </div>
-
-    <!-- ---- TALEP FORMU ----
-         WARNING: THE FORM WORKS WITHOUT JAVASCRIPT. It is a plain POST to our
-         own route; the script only upgrades it to stay on the page. Half the
-         point of this block is measurement, and a form that silently fails for
-         a visitor with a blocked script measures nothing. -->
-    <div class="form-blok" data-reveal>
-      <h3 class="cta">{f.baslik}</h3>
-      <form class="form" method="post" action="/api/iletisim" novalidate>
-        <!-- Honeypot: hidden from people, filled in by bots. Not `display:none`
-             on purpose - some scripts skip those; this one is off-screen and
-             out of the tab order. -->
-        <p class="tuzak" aria-hidden="true">
-          <label for="website">Bu alanı boş bırakın</label>
-          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
-        </p>
-        <input type="hidden" name="sayfa" value={Astro.url.pathname} />
-        <input type="hidden" name="utm" value="" />
-        <input type="hidden" name="js" value="" />
-
-        <div class="alanlar">
-          <label class="alan">
-            <span>{f.ad}</span>
-            <input name="ad" type="text" autocomplete="name" maxlength="200" />
-          </label>
-          <label class="alan">
-            <span>{f.eposta}</span>
-            <input name="eposta" type="email" autocomplete="email" maxlength="320" required />
-          </label>
-          <label class="alan">
-            <span>{f.telefon}</span>
-            <input name="telefon" type="tel" autocomplete="tel" maxlength="40" />
-          </label>
-          <label class="alan alan-genis">
-            <span>{f.mesaj}</span>
-            <textarea name="mesaj" rows="4" maxlength="4000" required></textarea>
-          </label>
-        </div>
-        <p class="ipucu">{f.ipucu}</p>
-
-        <label class="onay">
-          <input type="checkbox" name="onay" value="1" required />
-          <span>{f.onay}</span>
-        </label>
-        {
-          f.aydinlatma && (
-            <details class="aydinlatma">
-              <summary>{f.aydinlatmaBaslik}</summary>
-              <p>{f.aydinlatma}</p>
-            </details>
-          )
-        }
-
-        <div class="gonder-satir">
-          <button class="dugme dugme-birincil" type="submit" data-gonder data-bekle={f.gonderiliyor}>{f.gonder}</button>
-          <p class="durum" role="status" aria-live="polite" data-tamam={f.tamam} data-hata={f.hata}>
-            {talep === 'ok' ? f.tamam : talep === 'hata' ? f.hata : ''}
-          </p>
-        </div>
-      </form>
-    </div>
   </div>
 
   {
     haritaSrc && (
-      <div class="harita" data-reveal>
-        <iframe
-          src={haritaSrc}
-          title={metin('contact.map.title', 'Ofis konumu — harita', 'Office location — map')}
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        />
+      <div class="harita" data-reveal data-consent="external">
+        <template class="harita-cerceve">
+          <iframe
+            src={haritaSrc}
+            title={metin('contact.map.title', 'Ofis konumu — harita', 'Office location — map')}
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          />
+        </template>
+        <div class="harita-izin">
+          <p>{haritaIzinMetni}</p>
+          <div class="harita-izin-dugmeler">
+            <button type="button" class="dugme" data-consent-accept>{haritaYukleEtiket}</button>
+            <a class="dugme" href={yolHref} target="_blank" rel="noopener noreferrer">{yolEtiket}</a>
+            <a class="harita-izin-politika" href={politikaHref}>{metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Policy')}</a>
+          </div>
+        </div>
         <a
           class="konum"
           href={yolHref}
@@ -265,17 +332,86 @@ const haritaSrc = address
       </div>
     )
   }
+
+  {/* ---- INSTAGRAM STRIP (§5.221) ----
+      Under the map, full bleed like it. Grey until the pointer is on a tile,
+      films silent and playing only while on screen. A tile without a link is
+      a picture, not a dead link. */}
+  {
+    insta.length > 0 && (
+      <div class="insta" data-reveal>
+        <div class="container insta-bas">
+          <h4>{instaEtiket}</h4>
+          {instaHesap && (
+            <a class="insta-hesap" href={instaHesap.href} target="_blank" rel="noopener noreferrer">
+              {instaHesap.ad}
+            </a>
+          )}
+        </div>
+        <ul class="insta-serit">
+          {insta.map((m, i) => {
+            const ad = `${instaEtiket} — ${i + 1}`;
+            const icerik =
+              m.kind === 'video' ? (
+                <video
+                  src={m.src}
+                  poster={m.poster || undefined}
+                  muted
+                  loop
+                  playsinline
+                  preload="metadata"
+                  disablepictureinpicture
+                  aria-hidden="true"
+                />
+              ) : (
+                <img src={m.src} alt="" loading="lazy" decoding="async" />
+              );
+            /* WARNING: A TILE WITHOUT ITS OWN POST LINK OPENS THE ACCOUNT (editor,
+               2026-09-13: "clicking an Instagram video should open the Instagram
+               link, once, in a new tab"). Measured: the tile with a link opened
+               exactly one tab; the two without one did nothing, which reads as a
+               broken site. The account comes from the social links, typed once
+               (same source as the handle above). No account either -> still
+               not a link: a tile pointing nowhere would be worse. Panel rule:
+               lib/siteIcerik.js -> instagramHedef. */
+            const hedef = m.link || instaHesap?.href || '';
+            return (
+              <li>
+                {hedef ? (
+                  <a class="insta-oge" href={hedef} target="_blank" rel="noopener noreferrer" aria-label={ad}>
+                    {icerik}
+                  </a>
+                ) : (
+                  <div class="insta-oge" role="img" aria-label={ad}>
+                    {icerik}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    )
+  }
 </section>
 
 <style>
-  .big-mail {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.5rem 2rem;
-    padding-block: clamp(2rem, 5vw, 4rem);
-    border-block: 1px solid var(--line);
-    position: relative;
+  .section-head {
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  /* Two pairs, one grid shape: mail beside phone, address beside social. The
+     columns line up between the rows, so the page reads as one table of ways
+     to reach the office rather than as two unrelated blocks. */
+  .ust,
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem clamp(2rem, 5vw, 4rem);
+  }
+
+  .cols {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
   }
 
   /* WARNING: ONE SIZE FOR ONE ROLE. Measured before: the small caps above the
@@ -283,7 +419,7 @@ const haritaSrc = address
      nobody would call it a hierarchy, far enough that the eye reads it as a
      wobble. They say the same kind of thing, so they are one token now
      (styles/global.css). */
-  .cta,
+  .ust h4,
   .cols h4 {
     font-family: var(--font-display);
     font-size: var(--t-label);
@@ -291,14 +427,27 @@ const haritaSrc = address
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--muted);
+    margin-bottom: 0.8rem;
   }
 
-  .mail {
+  .big-mail {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    max-width: 100%;
+  }
+
+  /* Mail and number share one size so neither reads as the "real" contact. */
+  .mail,
+  .tel {
     font-family: var(--font-display);
     font-size: var(--t-display);
     font-weight: 500;
     letter-spacing: -0.02em;
     line-height: 1.1;
+  }
+
+  .mail {
     word-break: break-all;
     background-image: linear-gradient(var(--ink), var(--ink));
     background-repeat: no-repeat;
@@ -311,17 +460,43 @@ const haritaSrc = address
     background-size: 100% 2px;
   }
 
-  /* The arrow belongs to the address, so the two wrap as one thing. Loose in
-     the row it dropped to a line of its own on a phone (measured at 390px) and
-     read as a stray mark rather than as "this opens something". */
-  .mail-satir {
-    display: inline-flex;
-    align-items: center;
-    gap: clamp(0.75rem, 2vw, 1.5rem);
+  /* The note reads as small print under the address it refers to - body face,
+     quiet colour, a measure short enough to read in one sweep. The lead is the
+     only line in ink, so the two audiences find their paragraph at a glance. */
+  .not {
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+    max-width: 38rem;
+    display: grid;
+    gap: 1.1rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .not .lead,
+  .not .satir {
+    display: block;
+  }
+
+  .not .lead {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .not a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+    word-break: break-word;
+  }
+
+  .not a:hover {
+    text-decoration-thickness: 2px;
   }
 
   .arrow {
-    width: clamp(1.4rem, 3vw, 2.4rem);
+    width: clamp(1.2rem, 2.2vw, 1.8rem);
     height: auto;
     flex: none;
     transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
@@ -331,30 +506,8 @@ const haritaSrc = address
     transform: translate(0.3rem, -0.3rem);
   }
 
-  .cols {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    margin-top: clamp(2.5rem, 5vw, 4rem);
-  }
-
-  .cols h4 {
-    margin-bottom: 0.8rem;
-  }
-
-  .cols ul {
-    list-style: none;
-  }
-
-  .cols li a {
-    display: inline-block;
-    padding-block: 0.15rem;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.25s ease;
-  }
-
-  .cols li a:hover {
-    border-color: var(--ink);
+  .tel {
+    font-variant-numeric: tabular-nums;
   }
 
   /* The address IS the link - a separate "open in maps" line underneath would
@@ -395,13 +548,6 @@ const haritaSrc = address
     transform: translate(0.15rem, -0.15rem);
   }
 
-  /* The number stays plain text and the two buttons carry the actions: the
-     visitor is asked which one they want rather than having the page decide
-     that tapping a phone number means placing a call. */
-  .tel {
-    font-variant-numeric: tabular-nums;
-  }
-
   .dugmeler {
     display: flex;
     flex-wrap: wrap;
@@ -432,6 +578,45 @@ const haritaSrc = address
     border-color: var(--ink);
   }
 
+  /* ---- social accounts ----
+     A black mark AND the platform's name (editor, 2026-09-12: "the platform
+     names could be written next to the icons"). Icons alone asked the visitor
+     to recognise three logos; the name removes the guess and is the link's
+     accessible name. The mark stays ink, never the brand colour; a platform
+     without a known mark shows its name alone (§5.219). The row is the target,
+     44px tall. Hover fades, the same signal the menu uses (§5.213). */
+  .sosyal {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem clamp(1.25rem, 2.5vw, 2rem);
+  }
+
+  .sosyal a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    color: var(--ink);
+    transition: opacity 0.25s ease;
+  }
+
+  .sosyal a:hover {
+    opacity: 0.6;
+  }
+
+  .sosyal a:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  .sosyal svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex: none;
+    fill: currentColor;
+  }
+
   /* WARNING: BLACK AND WHITE IS A FILTER, NOT A MAP STYLE. A styled tile layer
      needs an API key and a billing account; `grayscale` costs nothing, works on
      whatever the provider draws, and cannot fall out of date. The contrast nudge
@@ -446,6 +631,47 @@ const haritaSrc = address
     background: var(--soft);
     line-height: 0;
     position: relative;
+  }
+
+  /* Until consent: a quiet block the height of the map, so the page does not
+     jump when the frame arrives. The pin is ours and would point at nothing. */
+  .harita-izin {
+    height: clamp(18rem, 38vh, 30rem);
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 1.1rem;
+    padding: 2rem var(--pad);
+    text-align: center;
+    line-height: 1.6;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .harita-izin p {
+    max-width: 34rem;
+  }
+
+  .harita-izin-dugmeler {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+  }
+
+  .harita-izin-politika {
+    font-size: var(--t-label);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .harita:not(.yuklendi) .konum {
+    display: none;
+  }
+
+  .harita.yuklendi .harita-izin {
+    display: none;
   }
 
   .harita iframe {
@@ -537,159 +763,102 @@ const haritaSrc = address
     pointer-events: none;
   }
 
-
-  /* ---- TALEP FORMU ----
-     The section already carries a form-ish rhythm (labels in small caps, thin
-     rules); the form borrows it rather than introducing a second style. */
-  .form-blok {
+  /* ---- INSTAGRAM STRIP (§5.221) ----
+     Grey is a FILTER on the media, not a property of the files: the editor
+     uploads the post as it is, and the colour comes back the moment the
+     pointer is on it. Tiles are portrait (9:16, the shape reels are shot in)
+     and the row scrolls sideways when it outgrows the page. */
+  .insta {
     margin-top: clamp(2.5rem, 5vw, 4rem);
-    padding-top: clamp(2rem, 4vw, 3rem);
-    border-top: 1px solid var(--line);
   }
 
-  .form-blok > h3 {
-    margin-bottom: 1.2rem;
-  }
-
-  .alanlar {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem 1.5rem;
-  }
-
-  .alan-genis {
-    grid-column: 1 / -1;
-  }
-
-  .alan {
-    display: grid;
-    gap: 0.4rem;
-  }
-
-  .alan > span {
-    font-family: var(--font-display);
-    font-size: var(--t-label);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  /* Underline only: a boxed field would read as a component from another site.
-     The focus ring is the ink line thickening - visible without colour, which
-     is the one signal that survives every kind of colour blindness. */
-  .alan input,
-  .alan textarea {
-    font: inherit;
-    color: var(--ink);
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    padding: 0.5rem 0;
-    min-height: 2.75rem;
-    transition: border-color 0.25s ease;
-  }
-
-  .alan textarea {
-    resize: vertical;
-    line-height: 1.6;
-  }
-
-  .alan input:focus,
-  .alan textarea:focus {
-    outline: none;
-    border-bottom-color: var(--ink);
-    border-bottom-width: 2px;
-    padding-bottom: calc(0.5rem - 1px);
-  }
-
-  .ipucu {
-    margin-top: 0.7rem;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
-  .onay {
+  .insta-bas {
     display: flex;
-    gap: 0.7rem;
-    align-items: flex-start;
-    margin-top: 1.6rem;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    cursor: pointer;
-  }
-
-  .onay input {
-    margin-top: 0.28rem;
-    width: 1.05rem;
-    height: 1.05rem;
-    flex: none;
-    accent-color: var(--ink);
-  }
-
-  .aydinlatma {
-    margin-top: 0.8rem;
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .aydinlatma summary {
-    cursor: pointer;
-    font-family: var(--font-display);
-    font-size: var(--t-label);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .aydinlatma p {
-    margin-top: 0.6rem;
-    line-height: 1.7;
-    max-width: 70ch;
-  }
-
-  .gonder-satir {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    align-items: baseline;
     gap: 1rem;
-    margin-top: 1.6rem;
+    margin-bottom: 1rem;
   }
 
-  .dugme-birincil {
-    border-color: var(--ink);
+  .insta-bas h4 {
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 
-  .dugme-birincil:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
-  .durum {
-    font-size: 0.9rem;
-    margin: 0;
-  }
-
-  .durum[data-tur='ok'] {
+  .insta-hesap {
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    letter-spacing: 0.08em;
     color: var(--ink);
+    transition: opacity 0.25s ease;
   }
 
-  /* WARNING: OFF-SCREEN, NOT display:none. A field that is not rendered at all
-     is skipped by some bots - and by some assistive technology, which is why it
-     also carries a label and aria-hidden. */
-  .tuzak {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
+  .insta-hesap:hover {
+    opacity: 0.6;
+  }
+
+  .insta-serit {
+    list-style: none;
+    display: flex;
+    gap: clamp(0.4rem, 0.8vw, 0.75rem);
+    overflow-x: auto;
+    padding-inline: var(--pad);
+    padding-bottom: 0.5rem;
+    scroll-snap-type: x proximity;
+    /* WARNING: SNAPPING IGNORES PADDING UNLESS TOLD. Measured without this: the
+       browser snapped the first tile flush to the screen edge on load (x=0 at
+       390px, x=14 at 1440px) instead of on the page margin like everything
+       above it. */
+    scroll-padding-inline: var(--pad);
+    scrollbar-width: thin;
+  }
+
+  .insta-serit li {
+    flex: 0 0 clamp(9.5rem, 15vw, 13.5rem);
+    scroll-snap-align: start;
+  }
+
+  .insta-oge {
+    display: block;
+    aspect-ratio: 9 / 16;
     overflow: hidden;
+    background: var(--soft);
   }
 
-  @media (max-width: 700px) {
-    .alanlar {
-      grid-template-columns: 1fr;
+  .insta-oge img,
+  .insta-oge video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1);
+    transition: filter 0.45s ease;
+  }
+
+  /* Hover only where there is a pointer: a tap on a phone would otherwise
+     leave one tile stuck in colour. */
+  @media (hover: hover) {
+    .insta-oge:hover img,
+    .insta-oge:hover video {
+      filter: none;
     }
   }
 
+  .insta-oge:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .insta-oge:focus-visible img,
+  .insta-oge:focus-visible video {
+    filter: none;
+  }
+
   @media (max-width: 700px) {
+    .ust,
     .cols {
       grid-template-columns: 1fr;
     }
@@ -700,6 +869,9 @@ const haritaSrc = address
     .arrow,
     .eylem svg,
     .dugme,
+    .sosyal a,
+    .insta-oge img,
+    .insta-oge video,
     .adres > span:first-child {
       transition: none;
     }
@@ -721,71 +893,6 @@ const haritaSrc = address
 </style>
 
 <script>
-  /* ---- TALEP FORMU ----
-     Progressive enhancement only: the form already posts and already answers
-     without this file. What the script adds is staying on the page - and the
-     campaign tags, which only the browser knows.
-
-     WARNING: js=1 IS THE CONTRACT WITH THE SERVER. The route answers JSON when
-     it sees it and a 303 redirect when it does not, so a visitor with a blocked
-     script never lands on a page of raw JSON. */
-  const form = document.querySelector<HTMLFormElement>('.form');
-
-  if (form) {
-    const jsAlan = form.querySelector<HTMLInputElement>('input[name="js"]');
-    const utmAlan = form.querySelector<HTMLInputElement>('input[name="utm"]');
-    const dugme = form.querySelector<HTMLButtonElement>('[data-gonder]');
-    const durum = form.querySelector<HTMLParagraphElement>('.durum');
-    if (jsAlan) jsAlan.value = '1';
-
-    /* Which campaign brought them. Read once here because the server never sees
-       the query string of the page the form sits on. */
-    if (utmAlan) {
-      const q = new URLSearchParams(location.search);
-      const parcalar = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid']
-        .map((k) => (q.get(k) ? `${k}=${q.get(k)}` : ''))
-        .filter(Boolean);
-      if (!parcalar.length && document.referrer) {
-        try {
-          const r = new URL(document.referrer);
-          if (r.origin !== location.origin) parcalar.push(`ref=${r.hostname}`);
-        } catch { /* bozuk referrer bir hata değil, yalnız bilinmeyen kaynaktır */ }
-      }
-      utmAlan.value = parcalar.join(' ').slice(0, 500);
-    }
-
-    const yaz = (metin: string, tur: 'ok' | 'hata') => {
-      if (!durum) return;
-      durum.textContent = metin;
-      durum.dataset.tur = tur;
-    };
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!dugme || dugme.disabled) return;
-      const eski = dugme.textContent || '';
-      dugme.disabled = true;
-      dugme.textContent = dugme.dataset.bekle || eski;
-      yaz('', 'ok');
-      try {
-        const r = await fetch(form.action, { method: 'POST', body: new FormData(form) });
-        if (!r.ok) throw new Error(String(r.status));
-        /* The form is cleared so a second enquiry starts empty - and so a
-           refresh cannot resend the same one. */
-        form.reset();
-        if (jsAlan) jsAlan.value = '1';
-        yaz(durum?.dataset.tamam || '', 'ok');
-      } catch {
-        yaz(durum?.dataset.hata || '', 'hata');
-      } finally {
-        dugme.disabled = false;
-        dugme.textContent = eski;
-      }
-    });
-  }
-</script>
-
-<script>
   /* The pin is anchored to the middle of the frame, so it is only honest while
      the map is where we left it. Panning happens in another origin and never
      reaches this document - the one thing we can see is the frame taking focus,
@@ -797,11 +904,36 @@ const haritaSrc = address
      switches tab or app, and hiding the pin for that would be wrong - only a
      click into the frame makes it the active element. */
   const harita = document.querySelector<HTMLElement>('.harita');
-  const cerceve = harita?.querySelector('iframe');
 
-  if (harita && cerceve) {
+  /* The frame is cloned in only after consent (§5.226), so it is looked up at
+     the moment of the blur, not once at load. */
+  if (harita) {
     window.addEventListener('blur', () => {
-      if (document.activeElement === cerceve) harita.classList.add('oynatildi');
+      const cerceve = harita.querySelector('iframe');
+      if (cerceve && document.activeElement === cerceve) harita.classList.add('oynatildi');
     });
+  }
+</script>
+
+<script>
+  /* ---- INSTAGRAM STRIP ----
+     WARNING: NOT `autoplay`. Twenty-four tiles would mean twenty-four decoders
+     and downloads running below the fold. A film plays while it is on screen
+     and stops when it leaves (same rule as the project films, §5.191); someone
+     who asked the system for less motion gets still frames. */
+  const instaFilmler = Array.from(document.querySelectorAll<HTMLVideoElement>('.insta video'));
+
+  if (instaFilmler.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const izleyici = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const film = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) film.play().catch(() => {});
+          else film.pause();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    for (const film of instaFilmler) izleyici.observe(film);
   }
 </script>

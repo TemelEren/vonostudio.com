@@ -1,0 +1,22 @@
+---
+import Base from '../../layouts/Base.astro';
+import CookiePolicy from '../../components/CookiePolicy.astro';
+import { useTranslations, localePath } from '../../i18n/ui';
+import { POLICY_PATH } from '../../consent/cookies';
+
+const locale = 'en' as const;
+const t = useTranslations(locale);
+const baslik = (() => {
+  const v = t('cookie.policy.title');
+  return v === 'cookie.policy.title' ? 'Cookie Policy' : v;
+})();
+---
+
+<Base
+  locale={locale}
+  title={`${baslik} | Vono Studio`}
+  description="The cookies used on vonostudio.com and how to change your choice."
+  altUrl={localePath('tr', POLICY_PATH.tr)}
+>
+  <CookiePolicy locale={locale} />
+</Base>

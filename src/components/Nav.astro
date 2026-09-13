@@ -30,32 +30,65 @@ const links = loadSectionOrder()
   .map(({ k, key }) => ({
     href: localePath(locale, '/#' + SECTION_ANCHOR[k]),
     label: t(key),
+    /* The anchor travels WITH the link: the scroll tracker reads it off the
+       DOM instead of keeping its own copy of the section order, which would
+       be a second list to keep in step (same reason as the menu itself). */
+    anchor: SECTION_ANCHOR[k],
   }));
+
+/* THE MARK SITS IN THE MIDDLE, SO THE LINKS ARE SPLIT AROUND IT - and the split
+   is a COUNT, never a fixed list of names. The warning above still holds: the
+   editor can restack the home page, and a bar that hard-coded "projects and
+   services on the left" would put the third heading to the left of the mark the
+   day they reorder it. Half of whatever the page has goes left, the rest right;
+   with an odd number the extra one goes left, which is where reading starts.
+
+   The right side also carries the language switch and the burger, so it holds
+   one more item than the left. That asymmetry is in the CONTENT, not in the
+   grid: the two side columns are equal `1fr` tracks, which is what keeps the
+   mark on the page's centre line whatever the labels say. */
+const half = Math.ceil(links.length / 2);
+const leftLinks = links.slice(0, half);
+const rightLinks = links.slice(half);
 ---
 
 <header class="nav" id="site-nav">
-  <div class="nav-inner container">
+  {/* ONE nav landmark with the mark INSIDE it, not two flanking a link. Two
+      <nav> elements would need two different labels to be told apart by a
+      screen reader, and any honest pair of labels ("Site" / "Site, continued")
+      describes the layout rather than the content. The logo is a link to the
+      home page, so it belongs to the navigation anyway. */}
+  <nav class="nav-inner container" aria-label="Site">
+    <div class="nav-side nav-side-left nav-links">
+      {leftLinks.map((link) => (
+        <a href={link.href} data-anchor={link.anchor}>
+          {link.label}
+        </a>
+      ))}
+    </div>
+
     <a class="nav-brand" href={localePath(locale, '/')} aria-label="Vono Studio">
       <Logo class="nav-logo" />
     </a>
 
-    <nav class="nav-links" aria-label="Site">
-      {links.map((link) => <a href={link.href}>{link.label}</a>)}
-    </nav>
-
-    <div class="nav-right">
+    <div class="nav-side nav-side-right nav-links">
+      {rightLinks.map((link) => (
+        <a href={link.href} data-anchor={link.anchor}>
+          {link.label}
+        </a>
+      ))}
       <a class="nav-lang" href={altUrl}>{langLabel}</a>
       <button class="nav-burger" id="nav-burger" aria-expanded="false" aria-controls="nav-menu">
         <span class="burger-label">{t('nav.menu')}</span>
         <span class="burger-icon" aria-hidden="true"><i></i><i></i></span>
       </button>
     </div>
-  </div>
+  </nav>
 
   <div class="nav-menu" id="nav-menu">
     <nav aria-label="Mobile">
       {links.map((link, i) => (
-        <a href={link.href} style={`--i:${i}`}>
+        <a href={link.href} data-anchor={link.anchor} style={`--i:${i}`}>
           <span class="menu-index">0{i + 1}</span>
           {link.label}
         </a>
@@ -80,67 +113,121 @@ const links = loadSectionOrder()
     box-shadow: 0 1px 0 var(--line);
   }
 
+  /* THREE TRACKS, AND THE OUTER TWO ARE EQUAL ON PURPOSE. `1fr auto 1fr` puts
+     the mark on the page's centre line no matter how long the labels are; the
+     right side carries one item more than the left, and with `space-between`
+     that difference would have pushed the logo off centre by half of it. */
   .nav-inner {
     height: var(--nav-h);
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: 2rem;
   }
 
   .nav-brand {
     color: var(--ink);
+    justify-self: center;
+    /* The mark is the middle track; it must not be stretched by the grid. */
+    display: flex;
+    align-items: center;
   }
 
-  .nav-links {
+  .nav-side {
     display: flex;
+    align-items: center;
     gap: 2.25rem;
+  }
+
+  .nav-side-left {
+    justify-content: flex-start;
+  }
+
+  .nav-side-right {
+    justify-content: flex-end;
   }
 
   .nav-links a,
   .nav-lang {
     font-family: var(--font-display);
     font-size: var(--t-nav);
-    /* 700, like the reference: at this size weight is what separates a menu
-       from a caption. Tracking is the other half - 0.14em was giving back in
-       lightness what the larger size bought, so it is cut to 0.09em. */
+    /* 700 and NO tracking, both measured off the reference (14px/700/normal).
+       At this size weight is what separates a menu from a caption; tracking
+       was giving back in lightness what the size bought. */
     font-weight: 700;
-    letter-spacing: 0.09em;
     text-transform: uppercase;
-    position: relative;
+    /* HOVER FADES, IT DOES NOT UNDERLINE (editor's request, 2026-09-12). The
+       rule it replaced drew a 1px line that wiped in from the right, which is
+       a second graphic element in a bar whose whole job is to stay quiet.
+
+       WARNING: THIS IS WHY THE LINKS NO LONGER NEED `position: relative` -
+       that was only there to anchor the underline's absolute ::after. Do not
+       reintroduce one without something to position.
+
+       Opacity, not a colour swap: the section links sit at --ink and the
+       language switch at --muted, so a single colour would fade one and do
+       nothing to the other.
+
+       WARNING: 0.6 IS A CONTRAST FLOOR, NOT A TASTE. Fading is literally
+       lowering contrast, so the value was computed rather than eyeballed:
+       --ink (#101010) at 0.45 over white lands near #939393 and measures
+       ~3.3:1, under the 4.5:1 needed to read a word. 0.6 lands near #6f6f6f
+       and measures ~4.9:1 - still a 40% drop, which is plainly visible, and
+       it happens to sit where --muted already does. Going lower needs a new
+       measurement. */
+    transition: opacity 0.25s ease;
   }
 
-  .nav-links a::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -0.35rem;
-    width: 100%;
-    height: 1px;
-    background: var(--ink);
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+  .nav-links a:hover {
+    opacity: 0.6;
   }
 
-  .nav-links a:hover::after {
-    transform: scaleX(1);
-    transform-origin: left;
+  /* ---- WHERE AM I ----
+     The section the reader is in is the only black label; the rest go quiet
+     (editor's request, 2026-09-12). The cue is the section, not the click, so
+     it also follows a plain scroll.
+
+     WARNING: 0.6 IS A CONTRAST FLOOR, NOT A LOOK. Unlike a hover, this is a
+     RESTING state - the quiet labels sit there for as long as the reader is in
+     another section, so they still have to be readable. --ink (#101010) at 0.6
+     over white lands near #707070 and measures ~4.95:1 (AA); at 0.45 it would
+     be ~3.3:1, i.e. a menu that is technically there and practically not.
+
+     WARNING: THE LANGUAGE SWITCH IS EXEMPT. It is not a section, so it never
+     becomes "current" and would sit dimmed for ever - and it is already
+     --muted, so 0.6 on top of that measures ~2.5:1. The rule therefore keys
+     off `data-anchor`, which only section links carry. */
+  .nav-links a[data-anchor] {
+    opacity: 0.6;
   }
 
-  .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
+  .nav-links a[data-anchor][aria-current='true'] {
+    opacity: 1;
+  }
+
+  /* A quiet label brightens under the pointer - it is where the reader is
+     going. The CURRENT one still fades (§5.213): it is where they already
+     are, so there is nothing to promise. */
+  .nav-links a[data-anchor]:hover {
+    opacity: 1;
+  }
+
+  .nav-links a[data-anchor][aria-current='true']:hover {
+    opacity: 0.6;
+  }
+
+
+  /* WARNING: KEYBOARD FOCUS IS NOT A HOVER (same rule as the project tiles).
+     Fading the label someone has just tabbed onto makes the one thing they
+     need to see the FAINTEST thing in the bar. Focus gets an outline and
+     keeps full contrast. */
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
   }
 
   .nav-lang {
     color: var(--muted);
-    transition: color 0.25s ease;
-  }
-
-  .nav-lang:hover {
-    color: var(--ink);
   }
 
   .nav-burger {
@@ -150,7 +237,6 @@ const links = loadSectionOrder()
     font-family: var(--font-display);
     font-size: var(--t-nav);
     font-weight: 700;
-    letter-spacing: 0.09em;
     text-transform: uppercase;
   }
 
@@ -171,7 +257,25 @@ const links = loadSectionOrder()
   }
 
   @media (max-width: 900px) {
-    .nav-links {
+    /* MEASURED ON THE REFERENCE AT 390px: its mark sits at the LEFT edge on a
+       phone, not centred - there is no room for links either side of it. The
+       left track is dropped and the bar falls back to mark + controls, which is
+       also what this site did before the mark moved. */
+    .nav-inner {
+      grid-template-columns: auto 1fr;
+    }
+
+    .nav-side-left {
+      display: none;
+    }
+
+    .nav-brand {
+      justify-self: start;
+    }
+
+    /* One rule, no specificity race: the section links go, the language
+       switch stays next to the burger. */
+    .nav-side-right > a:not(.nav-lang) {
       display: none;
     }
 
@@ -278,6 +382,217 @@ const links = loadSectionOrder()
 
   // Close the mobile menu when a link inside it is clicked.
   nav.querySelectorAll('.nav-menu a').forEach((a) => a.addEventListener('click', closeMenu));
+
+  /* ================= JUMPS TO A SECTION =================
+     WARNING: THE BROWSER'S OWN JUMP IS NOT USED ON A CLICK (editor, 2026-09-13:
+     "pressing Services does not centre it and its heading stays under the menu
+     bar"). The CSS scroll-margin on .section already lands the heading below
+     the bar - that is the fallback for a direct link and for no JS - but a
+     section short enough to fit the screen is CENTRED in the space under the
+     bar, so it reads as the thing that was asked for rather than as the top
+     of a long scroll. A taller one is aligned heading-first, never centred:
+     centring would cut its heading off.
+
+     The measurement is the section's CONTENT box (its padding stripped): the
+     padding differs per section (§5.219) and the heading is what has to show.
+     The section itself is never transformed, unlike the reveal wrappers inside
+     it, so its rectangle is trustworthy mid-animation.
+
+     WARNING: THE HASH IS NOT LEFT IN THE ADDRESS. "/#hizmetler" in the bar
+     means a reload opens half way down the page - the editor's other report,
+     "the site does not open at the top". A jump is a place on the page, not a
+     page. */
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sectionOf = (hash: string) => {
+    if (!hash || hash.length < 2) return null;
+    const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+    return el && el.classList.contains('section') ? el : null;
+  };
+  const jumpY = (el: HTMLElement) => {
+    /* The first section IS the top of the page: its padding already clears
+       the bar, so "Projeler" goes back to where the page opened, not 40px past. */
+    if (el === document.querySelector('main > section.section')) return 0;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    const top = r.top + window.scrollY + parseFloat(cs.paddingTop);
+    const bottom = r.bottom + window.scrollY - parseFloat(cs.paddingBottom);
+    /* scroll-margin-top resolves to bar + gap - padding (global.css), so adding
+       the padding back gives bar + gap in pixels with no second copy of either. */
+    const barGap = parseFloat(cs.scrollMarginTop) + parseFloat(cs.paddingTop);
+    const bar = nav.getBoundingClientRect().height;
+    const room = window.innerHeight - bar;
+    /* WARNING: A PAIRED SECTION IS FRAMED WITH THE ONE AFTER IT (global.css →
+       --jump-with-next, editor 2026-09-13: About brings Contact along). The
+       group ends at the next section's CONTAINER, not its box: the contact map
+       is full-bleed and 340-560px tall, and counting it would mean the pair
+       never fits and is never centred. When the pair does not fit it is still
+       aligned heading-first, which is exactly what puts the most of the next
+       section on screen - centring the first one alone would push it below. */
+    let groupBottom = bottom;
+    const next = el.nextElementSibling;
+    if (cs.getPropertyValue('--jump-with-next').trim() === '1' && next instanceof HTMLElement && next.classList.contains('section')) {
+      const box = next.querySelector(':scope > .container') || next;
+      groupBottom = box.getBoundingClientRect().bottom + window.scrollY;
+      if (groupBottom - top + 2 * (barGap - bar) > room) return Math.max(0, Math.round(top - barGap));
+    }
+    const height = groupBottom - top;
+    const y = height + 2 * (barGap - bar) <= room
+      ? top - bar - (room - height) / 2
+      : top - barGap;
+    return Math.max(0, Math.round(y));
+  };
+  const jump = (el: HTMLElement, smooth: boolean) =>
+    window.scrollTo({ top: jumpY(el), behavior: smooth && !reduceMotion ? 'smooth' : 'auto' });
+  const clearHash = () => history.replaceState(history.state, '', location.pathname + location.search);
+
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+    if (!a || a.target === '_blank') return;
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname) return;
+    const el = sectionOf(url.hash);
+    if (!el) return;
+    e.preventDefault();
+    jump(el, true);
+    if (location.hash) clearHash();
+  });
+
+  /* Arriving with a hash (a menu link from a project page): the browser has
+     already jumped using scroll-margin; the pictures above then load and push
+     the section down, so the jump is repeated once the page has settled. */
+  const arrived = sectionOf(location.hash);
+  if (arrived) {
+    const settle = () => { jump(arrived, false); clearHash(); };
+    if (document.readyState === 'complete') settle();
+    else window.addEventListener('load', settle, { once: true });
+  } else {
+    /* WARNING: A RELOAD OPENS AT THE TOP. The intro plays on every load and
+       ends on a page that starts at its first section; restoring the old scroll
+       position behind it opened the site with the bar cutting through whatever
+       happened to be there. Only a RELOAD is overridden - Back from a project
+       page keeps its place, which is why restoration goes back to "auto" as the
+       page is left. */
+    const nav0 = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (nav0?.type === 'reload' && 'scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+      window.scrollTo(0, 0);
+      window.addEventListener('pagehide', () => { history.scrollRestoration = 'auto'; });
+    }
+  }
+
+  /* ================= WHERE AM I =================
+     Marks the section the reader is in, so the bar can black out that label
+     and quiet the others.
+
+     WARNING: ONLY ONE ANSWER IS ALLOWED. An IntersectionObserver reports every
+     section that is visible, and on a tall screen that is regularly two or
+     three - turning those reports into "the current one" needs a tie-break
+     anyway. Reading the positions and taking the LAST section whose top has
+     passed under the bar always yields exactly one, and it keeps working in the
+     gaps between sections, where nothing is "intersecting" a narrow band.
+
+     WARNING: THE SECTIONS MAY NOT EXIST. This component also runs on a project
+     page, where there is no `#projeler` to be inside. The tracker then does
+     nothing at all rather than marking the first link for a page it is not on. */
+  const marks = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[data-anchor]'));
+  const targets = marks
+    .map((a) => ({ a, el: document.getElementById(a.dataset.anchor || '') }))
+    .filter((x): x is { a: HTMLAnchorElement; el: HTMLElement } => !!x.el);
+
+  if (targets.length) {
+    /* Anchors repeat: the same section is in the bar AND in the mobile menu,
+       so every link for the winning anchor is marked, not just the first. */
+    const paint = (anchor: string) => {
+      for (const a of marks) {
+        const on = a.dataset.anchor === anchor;
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      }
+    };
+
+    /* The bar covers the top of the viewport, so a section is "reached" when
+       its top passes under the bar - plus a small margin, or a heading sitting
+       exactly at the edge flickers between two answers. */
+    /* WARNING: THE LINE IS HALF WAY DOWN THE FREE AREA AND IT IS MET BY THE
+       HEADING, NOT BY THE SECTION'S EDGE. A menu jump centres a short section
+       (above), which leaves its outer edge - top padding included - well below
+       a line hugging the bar, and the tracker went on marking the section the
+       reader had just left. The heading of a centred section always sits above
+       the middle; the heading of the next one has not reached it yet. */
+    const edge = () => {
+      const bar = nav.getBoundingClientRect().height;
+      return bar + (window.innerHeight - bar) / 2;
+    };
+    const headingTop = (el: HTMLElement) =>
+      el.getBoundingClientRect().top + parseFloat(getComputedStyle(el).paddingTop);
+
+    /* WARNING: A CLICK IS NOT ENOUGH ON ITS OWN, THE SCROLL UNDOES IT.
+       Marking the destination on click and leaving it at that was measured to
+       last 120ms: smooth scrolling starts, `scroll` fires while the page is
+       still at the top, and the tracker repaints the section the reader is
+       LEAVING. The pressed label has to stay pressed until the page actually
+       arrives - so the destination is held, and released when its section
+       reaches the line (not after a guessed duration, which would be wrong at
+       both ends of a long page).
+
+       The timeout is the escape hatch: someone who clicks and then scrolls the
+       other way must not leave the bar stuck on a section they abandoned. */
+    let pending: string | null = null;
+    let pendingAt = 0;
+
+    const track = () => {
+      const line = edge();
+      let current = targets[0];
+      for (const t of targets) {
+        if (headingTop(t.el) <= line) current = t;
+      }
+      if (pending) {
+        const arrived = current.a.dataset.anchor === pending;
+        const stale = performance.now() - pendingAt > 1200;
+        if (arrived || stale) pending = null;
+        else {
+          paint(pending);
+          return;
+        }
+      }
+      /* At the very bottom the last section may be too short to ever reach the
+         line; whoever scrolled to the end is looking at it. */
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        current = targets[targets.length - 1];
+      }
+      paint(current.a.dataset.anchor || '');
+    };
+
+    /* One read per frame: `scroll` fires far more often than the page paints,
+       and each pass measures every section. */
+    let queued = false;
+    const onMove = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        track();
+      });
+    };
+
+    track();
+    window.addEventListener('scroll', onMove, { passive: true });
+    /* A resize moves every section; a late web font reflowing the page does
+       too, which a resize listener alone would miss. */
+    new ResizeObserver(onMove).observe(document.body);
+
+    /* Clicking marks the destination immediately. Smooth scrolling takes most
+       of a second, and waiting for it would leave the label the reader just
+       pressed looking unpressed. */
+    for (const a of marks) {
+      a.addEventListener('click', () => {
+        pending = a.dataset.anchor || null;
+        pendingAt = performance.now();
+        if (pending) paint(pending);
+      });
+    }
+  }
 
   // Playful nav logo: glyphs follow the cursor at different depths and
   // bounce elastically on hover. Movement values are in viewBox units

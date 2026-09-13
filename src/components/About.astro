@@ -10,213 +10,122 @@ const t = useTranslations(locale);
 const about = loadAbout();
 
 const stats = loadSettings().stats.map((s) => ({ value: s.value, label: s.label[locale] }));
+
+/* WARNING: ONE PARAGRAPH, NOT THE WHOLE STORY (editor, 2026-09-12: "make the
+   about section simpler, nobody reads this much text"). The section used to
+   print every intro paragraph, vision, mission, values, awards and the team -
+   measured at 1440px it ran 2,300px tall. It is now the photo, the FIRST intro
+   paragraph and the figures.
+
+   The rest is NOT deleted: it stays in the content database and in the panel,
+   so it can come back or move to a page of its own. The panel says what is not
+   printed (§5.220). */
+const lead = about.intro[locale][0] ?? '';
 ---
 
 <section class="section" id="hakkimizda">
-  <div class="container about">
-    <div class="left" data-reveal>
+  <div class="container">
+    <div class="section-head" data-reveal>
       <h2 class="section-title">{t('about.title')}</h2>
     </div>
 
-    <div class="right">
+    {/* WARNING: PICTURE LEFT, WORDS RIGHT (editor, 2026-09-12). The previous
+        turn centred a single column; with one paragraph left, that column was
+        mostly photo and a short line under it. Side by side, the paragraph and
+        the figures sit next to the picture they describe and the section reads
+        in one glance. On a phone the two stack again - photo first. */}
+    <div class="about">
       <figure class="team-photo" data-reveal>
         <img src={about.photo} alt={t('about.photo.alt')} loading="lazy" decoding="async" />
       </figure>
 
-      <p class="lead" data-reveal>{about.intro[locale][0]}</p>
-      {about.intro[locale].slice(1).map((p) => <p class="muted" data-reveal>{p}</p>)}
+      <div class="metin" data-reveal>
+        {lead && <p class="lead">{lead}</p>}
 
-      <div class="vm" data-reveal>
-        <div>
-          <h4>{t('about.vision')}</h4>
-          <p>{about.vision[locale]}</p>
-        </div>
-        <div>
-          <h4>{t('about.mission')}</h4>
-          <p>{about.mission[locale]}</p>
-        </div>
-      </div>
-
-      <div data-reveal>
-        <h4>{t('about.values')}</h4>
-        <div class="values">
-          {
-            about.values.map((v) => (
-              <div>
-                <strong>{v.title[locale]}</strong>
-                <p class="muted">{v.description[locale]}</p>
-              </div>
-            ))
-          }
-        </div>
-      </div>
-
-      <div data-reveal>
-        <h4>{t('about.awards')}</h4>
-        <ul class="awards">
-          {
-            about.awards.map((a) => (
-              <li>
-                <span class="year">{a.year}</span>
-                <span class="name">{a.name[locale]}</span>
-                <span class="prize">{a.prize[locale]}</span>
-              </li>
-            ))
-          }
-        </ul>
-      </div>
-
-      <div data-reveal>
-        <h4>{t('about.team')}</h4>
-        <div class="team">
-          {
-            about.team.map((m) => (
-              <div class="member">
-                <strong>{m.name}</strong>
-                <span class="role">{m.role[locale]}</span>
-                <p class="muted">{m.bio[locale]}</p>
-              </div>
-            ))
-          }
-        </div>
-      </div>
-
-      <dl class="stats" data-reveal>
         {
-          stats.map((s) => (
-            <div>
-              <dt>{s.value}</dt>
-              <dd>{s.label}</dd>
-            </div>
-          ))
+          stats.length > 0 && (
+            <dl class="stats">
+              {stats.map((s) => (
+                <div>
+                  <dt>{s.value}</dt>
+                  <dd>{s.label}</dd>
+                </div>
+              ))}
+            </dl>
+          )
         }
-      </dl>
+      </div>
     </div>
   </div>
 </section>
 
 <style>
+  .section-head {
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  /* WARNING: THE TEXT STARTS ON THE PHOTO'S TOP EDGE, NOT ON ITS MIDDLE (editor,
+     2026-09-12: "the text to the right of the photo, on the same line as the
+     photo"). `align-items: center` centred the text block against the picture,
+     so the two top edges drifted apart whenever the paragraph was shorter or
+     longer than the photo. Both columns now stretch to the row: the paragraph
+     begins where the picture begins and, when the picture is the taller of the
+     two, the figures sit on its bottom edge. */
   .about {
     display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: clamp(2rem, 6vw, 6rem);
-    align-items: start;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: stretch;
   }
 
-  .left {
-    position: sticky;
-    top: calc(var(--nav-h) + 2rem);
-  }
+  /* WARNING: THE PHOTO KEEPS ITS OWN SHAPE - IT IS NOT STRETCHED TO THE TEXT.
+     Tried and measured: stretching the figure to the row with `object-fit: cover`
+     lined up the bottom edges too, but the photo is wide (2032x934) and below
+     ~1300px the crop cut the second team member out of the frame at 1024px. An
+     aligned bottom edge is not worth a missing person. So only the TOP edges are
+     guaranteed; when the photo is the taller of the two (>=1440px) the figures
+     still land on its bottom edge through `align-content: space-between`.
 
-  .right {
-    display: grid;
-    gap: clamp(2rem, 4vw, 3rem);
-    max-width: 46rem;
-  }
-
+     WARNING: `aspect-ratio` ON A STRETCHED FIGURE IS A TRAP: the browser derived
+     the width from the stretched height and the photo grew to 782px inside a
+     468px column, covering the text (measured). The figure sits on the top edge
+     and never stretches, so the grey loading background cannot show under it. */
   .team-photo {
     background: var(--soft);
+    align-self: start;
+    min-width: 0;
   }
 
   .team-photo img {
+    display: block;
     width: 100%;
     aspect-ratio: 2032 / 934;
     object-fit: cover;
   }
 
+  .metin {
+    display: grid;
+    gap: clamp(1.75rem, 3.5vw, 2.5rem);
+    align-content: space-between;
+  }
+
+  /* The line box adds half the leading above the first line, so the letters
+     would start visibly below the photo's top edge. The negative margin takes
+     that half-leading back: (1.5 - 1) / 2 = 0.25em. */
   .lead {
-    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    font-size: clamp(1.1rem, 1.7vw, 1.4rem);
     line-height: 1.5;
+    margin-top: -0.25em;
   }
 
-  .muted {
-    color: var(--muted);
-  }
-
-  h4 {
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 1rem;
-  }
-
-  .vm {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    border-top: 1px solid var(--line);
-    padding-top: 2rem;
-  }
-
-  .values {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem 2rem;
-  }
-
-  .values strong {
-    font-family: var(--font-display);
-    font-weight: 500;
-    display: block;
-    margin-bottom: 0.35rem;
-  }
-
-  .awards {
-    list-style: none;
-    border-top: 1px solid var(--line);
-  }
-
-  .awards li {
-    display: grid;
-    grid-template-columns: 4rem 1fr auto;
-    gap: 1.5rem;
-    align-items: baseline;
-    padding-block: 1rem;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .awards .year {
-    font-family: var(--font-display);
-    font-weight: 500;
-  }
-
-  .awards .prize {
-    color: var(--muted);
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
-
-  .team {
-    display: grid;
-    gap: 2rem;
-  }
-
-  .member strong {
-    font-family: var(--font-display);
-    font-size: 1.15rem;
-    font-weight: 500;
-  }
-
-  .member .role {
-    display: block;
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin: 0.2rem 0 0.75rem;
-  }
-
-  .member p {
-    font-size: 0.95rem;
-  }
-
+  /* The figures take as many columns as fit: four in a wide text column, two
+     when it is narrow - never a single column of numbers. */
   .stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
     gap: 1.5rem;
     border-top: 1px solid var(--line);
-    padding-top: 2.5rem;
+    padding-top: 1.75rem;
   }
 
   .stats dt {
@@ -237,27 +146,6 @@ const stats = loadSettings().stats.map((s) => ({ value: s.value, label: s.label[
   @media (max-width: 800px) {
     .about {
       grid-template-columns: 1fr;
-    }
-
-    .left {
-      position: static;
-    }
-
-    .vm,
-    .values {
-      grid-template-columns: 1fr;
-    }
-
-    .awards li {
-      grid-template-columns: 3.5rem 1fr;
-    }
-
-    .awards .prize {
-      grid-column: 2;
-    }
-
-    .stats {
-      grid-template-columns: repeat(2, 1fr);
     }
   }
 </style>

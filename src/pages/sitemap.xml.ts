@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { loadProjects } from '../db';
 import { localePath } from '../i18n/ui';
 import { projectPath } from '../seo/pages';
+import { POLICY_PATH } from '../consent/cookies';
 
 const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
@@ -23,6 +24,7 @@ export const GET: APIRoute = ({ site }) => {
       en: projectPath('en', project.slug),
       priority: '0.8',
     })),
+    { tr: localePath('tr', POLICY_PATH.tr), en: localePath('en', POLICY_PATH.en), priority: '0.2' },
   ];
 
   const entries = pages.flatMap(({ tr, en, priority }) =>

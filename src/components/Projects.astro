@@ -5,6 +5,7 @@ import {
   loadProjects,
   projectCategoryKeys,
   projectGridLine,
+  projectTitle,
   usableCategories,
 } from '../db';
 import { useTranslations, type Locale } from '../i18n/ui';
@@ -20,6 +21,7 @@ const rows = loadProjects();
    and simply drops a part whose row was removed (db/projectMeta.ts). */
 const projects = rows.map((p) => ({
   ...p,
+  name: projectTitle(p, locale),
   line: projectGridLine(p, locale),
   cats: projectCategoryKeys(p),
 }));
@@ -262,9 +264,9 @@ const filterScript = [
             data-reveal
             data-cats={p.cats.join(' ')}
           >
-            <img src={p.cover} alt={p.title} loading="lazy" decoding="async" />
+            <img src={p.cover} alt={p.name} loading="lazy" decoding="async" />
             <div class="cap">
-              <h3>{p.title}</h3>
+              <h3>{p.name}</h3>
               {p.line && <span>{p.line}</span>}
             </div>
           </a>
@@ -272,9 +274,14 @@ const filterScript = [
       }
     </div>
   </div>
-</section>
 
-{showFilters && <script is:inline set:html={filterScript} />}
+  {/* WARNING: THE SCRIPT STAYS INSIDE THE SECTION. Printed after </section> it
+      became a sibling between this section and the next one, so the adjacency
+      rule in styles/global.css (the tightened projects/references pair)
+      silently stopped matching. Measured: the gap to the references did not
+      move. */}
+  {showFilters && <script is:inline set:html={filterScript} />}
+</section>
 
 <style>
   /* The old layout leaned on its own offsets for air; a uniform grid has none,
@@ -450,17 +457,34 @@ const filterScript = [
        twelve covers are wider than they are tall (one is 3.29:1); a portrait
        tile would slice the middle out of them. */
     aspect-ratio: 4 / 3;
-    background: var(--soft);
+    /* WARNING: THIS COLOUR IS VISIBLE, NOT A PLACEHOLDER ANY MORE. The hover
+       pulls the photograph in to scale(0.95), so whatever sits under the tile
+       shows as a ~7px band around it. With --soft (#f4f4f1) that band read as
+       a grey MOUNT drawn around the picture instead of the page opening up
+       behind it - the editor reported exactly that ("a frame appears, and it
+       is that colour rather than the white of the page", 2026-09-12).
+       Measured on the reference: its tiles are transparent, so the band is
+       the page's own white. --bg matches that and still covers the gap while
+       an image loads. */
+    background: var(--bg);
     color: #fff;
   }
 
+  /* WARNING: THE HOVER PULLS THE PHOTOGRAPH IN, IT DOES NOT PUSH IT OUT.
+     Measured on the reference with a real pointer: the image goes from
+     scale(1) to scale(0.95) over 0.3s on cubic-bezier(0.57, 0.21, 0.69, 1) -
+     it steps BACK, leaving a thin margin of the page around it. This site used
+     to do the opposite (0.9s out to scale(1.055)), which reads as a thumbnail
+     zoom rather than as a print being lifted off the sheet. The curve is the
+     reference's; the duration is stretched slightly because our tiles are
+     bigger, so the same speed would feel abrupt. */
   .project img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
     transform: scale(1.001);
-    transition: transform 0.9s cubic-bezier(0.25, 1, 0.3, 1);
+    transition: transform 0.45s cubic-bezier(0.57, 0.21, 0.69, 1);
   }
 
   /* WARNING: THE SCRIM IS A MEASUREMENT, NOT A TASTE. White small caps over a
@@ -497,6 +521,9 @@ const filterScript = [
     display: flex;
     flex-direction: column;
     gap: 0.3em;
+    /* Measured on the reference: opacity and transform, 0.2s ease-in-out, and
+       it slides DOWN by about its own height as it goes. */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
   }
 
   .cap h3 {
@@ -521,15 +548,37 @@ const filterScript = [
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
   }
 
-  .project:hover img,
-  .project:focus-visible img {
-    transform: scale(1.055);
+  /* WARNING: `hover: hover` IS NOT OPTIONAL HERE. A phone has no pointer to
+     take away, so a tap would latch these rules and the tile would sit there
+     with its title gone until something else was tapped - the caption is the
+     only thing naming the project on a one-column grid.
+
+     WARNING: THE SCRIM MAY ONLY LEAVE BECAUSE THE TEXT LEAVES WITH IT. The
+     gradient is a WCAG measurement (see the note on ::after) and it must hold
+     4.5:1 wherever white letters sit. Here they do not sit anywhere: the
+     caption is already at opacity 0 by the time the photograph is clear, so
+     there is no contrast left to fail. Fading the scrim while keeping the
+     caption would be the one change this must never make. */
+  @media (hover: hover) {
+    .project:hover img {
+      transform: scale(0.95);
+    }
+
+    .project:hover::after {
+      opacity: 0;
+    }
+
+    .project:hover .cap {
+      opacity: 0;
+      transform: translateY(1.75rem);
+    }
   }
 
-  .project:hover::after,
-  .project:focus-visible::after {
-    opacity: 1.12;
-  }
+  /* WARNING: KEYBOARD FOCUS IS NOT A HOVER. Someone tabbing through the grid
+     needs to READ which project they are on, so focus keeps the caption, keeps
+     the scrim behind it, and leans on the outline below instead. Shrinking the
+     image on focus would also open a gap between the photograph and a scrim
+     that is pinned to the TILE, drawing a dark rim around nothing. */
 
   /* Keyboard users need to see where they are; the tile has no border to lean
      on. */
@@ -555,6 +604,7 @@ const filterScript = [
   @media (prefers-reduced-motion: reduce) {
     .project img,
     .project::after,
+    .project .cap,
     .filter {
       transition: none;
     }
@@ -566,8 +616,18 @@ const filterScript = [
       animation: none;
     }
 
-    .project:hover img,
-    .project:focus-visible img {
+    /* Nothing changes on hover at all: the caption stays, so the scrim that
+       makes it legible has to stay with it. */
+    .project:hover img {
+      transform: none;
+    }
+
+    .project:hover::after {
+      opacity: 1;
+    }
+
+    .project:hover .cap {
+      opacity: 1;
       transform: none;
     }
   }

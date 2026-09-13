@@ -72,11 +72,14 @@ db.exec(`
   );
 
   -- Everything that used to live under /public, keyed by its URL path.
+  -- A film keeps bytes empty and names "<sha256>.<ext>" in content-medya/
+  -- beside this file (panel section 5.223); NULL for everything stored inline.
   CREATE TABLE assets (
     path    TEXT PRIMARY KEY,
     mime    TEXT NOT NULL,
     bytes   BLOB NOT NULL,
-    updated INTEGER NOT NULL
+    updated INTEGER NOT NULL,
+    file    TEXT
   );
 `);
 

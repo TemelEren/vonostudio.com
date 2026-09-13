@@ -1,6 +1,6 @@
 // Page-level schema.org nodes, handed to <Base schema={...}>.
 import { breadcrumbSchema, ORG_ID, SITE_ID } from './schema';
-import { loadProjects, loadSettings, metaText, resolveProjectMedia, type Project } from '../db';
+import { loadProjects, loadSettings, metaText, projectTitle, resolveProjectMedia, type Project } from '../db';
 import { localePath, useTranslations, type Locale } from '../i18n/ui';
 
 const abs = (site: URL, path: string) => new URL(path, site).href;
@@ -35,7 +35,7 @@ export function homeSchema(site: URL, locale: Locale) {
       itemListElement: projects.map((p, i) => ({
         '@type': 'ListItem',
         position: i + 1,
-        name: p.title,
+        name: projectTitle(p, locale),
         url: abs(site, projectPath(locale, p.slug)),
       })),
     },
@@ -59,7 +59,7 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
       '@type': 'CreativeWork',
       '@id': url,
       url,
-      name: project.title,
+      name: projectTitle(project, locale),
       description: project.excerpt[locale],
       /* WARNING: `project.gallery` IS NOT READ DIRECTLY. The editor's media list
          REPLACES it — a project the strip has been saved on has no `gallery`
@@ -86,7 +86,7 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
     breadcrumbSchema(site, [
       [loadSettings().siteName, localePath(locale, '/')],
       [t('projects.title'), localePath(locale, '/#projeler')],
-      [project.title, projectPath(locale, project.slug)],
+      [projectTitle(project, locale), projectPath(locale, project.slug)],
     ]),
   ];
 }

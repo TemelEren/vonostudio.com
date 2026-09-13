@@ -1,4 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Locale } from '../i18n/locale';
 import type { About, Project, Reference, Service, Settings, Theme } from './types';
@@ -7,6 +9,8 @@ import { resolveTheme } from './theme';
 export type * from './types';
 export * from './projectMeta';
 export * from './projectMedia';
+export * from './instagram';
+import { resolveInstagram, type InstagramPost } from './instagram';
 export * from './projectCategories';
 export * from './sectionOrder';
 import { resolveCategories, type ProjectCategory } from './projectCategories';
@@ -158,6 +162,10 @@ export const loadProjectCategories = (): ProjectCategory[] =>
 export const loadSectionOrder = (): SectionKey[] =>
   resolveSectionOrder(optionalDocument<unknown>('sectionOrder'));
 
+/* Optional as well: no row means no Instagram strip under the map (db/instagram.ts). */
+export const loadInstagram = (): InstagramPost[] =>
+  resolveInstagram(optionalDocument<unknown>('instagram'));
+
 export const loadSettings = () => document<Settings>('settings');
 export const loadAbout = () => document<About>('about');
 export const loadServices = () => document<Service[]>('services');
@@ -182,6 +190,21 @@ export function loadProject(slug: string): Project | undefined {
   });
 }
 
+/**
+ * Folder the films live in, beside the live database.
+ *
+ * WARNING: FILMS ARE NOT IN THE DATABASE (panel §5.223). Reading a range of a
+ * blob with `substr` loads the WHOLE value first — measured: 470 ms and the full
+ * 400 MB for every 4 MB a player asks for — and one SQLite value cannot exceed
+ * 1 GB at all. A film row keeps `bytes` empty and `file` names
+ * "<sha256>.<ext>" in this folder. Draft and live share it: the name is the
+ * content's hash, so the file never changes under a published row.
+ */
+export const MEDIA_DIR = process.env.CONTENT_MEDIA_DIR || join(dirname(DB_PATH), 'content-medya');
+
+/** The only names ever joined to {@link MEDIA_DIR}. */
+const MEDIA_NAME = /^[0-9a-f]{64}\.(mp4|webm)$/;
+
 /** What a stored file is, without reading the file. */
 export interface AssetMeta {
   path: string;
@@ -189,6 +212,17 @@ export interface AssetMeta {
   /** Bytes on disk. Needed for Content-Length and for range arithmetic. */
   size: number;
   updated: number;
+  /** Absolute path of a film stored outside the database; absent for the rest. */
+  filePath?: string;
+}
+
+/* Databases seeded before films moved to disk have no `file` column. Asked once
+   per request: the panel adds the column the first time it writes a film, and
+   the site must keep serving pictures from a database it has not touched. */
+function hasFileColumn(db: DatabaseSync): boolean {
+  return read('assets-file-column', () =>
+    (db.prepare("SELECT count(*) AS n FROM pragma_table_info('assets') WHERE name = 'file'").get() as { n: number }).n > 0
+  );
 }
 
 /**
@@ -198,13 +232,31 @@ export interface AssetMeta {
  * browser asks for it in pieces; materialising the whole blob to answer "does
  * this exist and how big is it" would pull the entire file into memory for
  * every seek. The caller asks for the part it is about to send.
+ *
+ * WARNING: A ROW IS NOT A TRUSTED PATH. Only a "<64 hex>.<ext>" name is joined
+ * to the media folder, so an edited row ("../../etc/passwd") serves nothing. A
+ * film whose file is missing answers as not found — sending the row's empty
+ * `bytes` would be a video that silently never plays.
  */
 export function loadAssetMeta(path: string): AssetMeta | undefined {
   return read(`asset-meta:${path}`, (db) => {
+    const withFile = hasFileColumn(db);
     const row = db
-      .prepare('SELECT path, mime, length(bytes) AS size, updated FROM assets WHERE path = ?')
-      .get(path) as AssetMeta | undefined;
-    return row;
+      .prepare(
+        `SELECT path, mime, length(bytes) AS size, updated${withFile ? ', file' : ''} FROM assets WHERE path = ?`
+      )
+      .get(path) as (AssetMeta & { file?: string | null }) | undefined;
+    if (!row) return undefined;
+    const { file, ...meta } = row;
+    if (!file) return meta;
+    if (!MEDIA_NAME.test(file)) return undefined;
+    const filePath = join(MEDIA_DIR, file);
+    try {
+      return { ...meta, size: statSync(filePath).size, filePath };
+    } catch {
+      console.warn(`[assets] ${path}: film file missing in ${MEDIA_DIR} (${file})`);
+      return undefined;
+    }
   });
 }
 

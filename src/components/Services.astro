@@ -30,6 +30,14 @@ const list = services();
 </section>
 
 <style>
+  /* WARNING: THE ROW SPANS THE PROJECT GRID, AND THE WORDS DO THE BALANCING
+     (editor, 2026-09-12). Two tries at closing the gap by narrowing the title
+     column (a bounded 20rem, then a fit-content subgrid) left the list hugging
+     the left edge and ending far short of the project grid above - "narrow and
+     shapeless". The row is full width again, as it was, so its right edge is
+     the grid's right edge. What changed is the proportion: the description
+     column is wider than the title column and its type larger, so the text
+     fills the row instead of hanging at its far end. */
   .services {
     list-style: none;
     border-top: 1px solid var(--line);
@@ -37,7 +45,7 @@ const list = services();
 
   .services li {
     display: grid;
-    grid-template-columns: 4rem 1fr minmax(0, 26rem);
+    grid-template-columns: 4rem minmax(0, 1fr) minmax(0, 1.35fr);
     align-items: center;
     gap: 2rem;
     padding: clamp(1.5rem, 3vw, 2.5rem) 1rem;
@@ -68,7 +76,8 @@ const list = services();
   }
 
   .services p {
-    font-size: 0.92rem;
+    font-size: clamp(0.98rem, 1.2vw, 1.15rem);
+    line-height: 1.55;
     color: var(--muted);
     transition: color 0.35s ease;
   }

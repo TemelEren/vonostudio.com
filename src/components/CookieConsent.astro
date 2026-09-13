@@ -1,0 +1,259 @@
+---
+/* ================================================================
+   COOKIE NOTICE AND CONSENT (§5.226)
+
+   A quiet bar along the bottom of the page (§5.227), not a card.
+
+   What it asks for is exactly one category: "external content" - today the
+   Google map in the contact section, the only thing on the site that places
+   third-party cookies (inventory: consent/cookies.ts). Necessary storage (the
+   choice itself) needs no consent and is not offered as a switch: a switch
+   that does nothing is a false statement.
+
+   WARNING: REJECTING IS AS EASY AS ACCEPTING. The KVKK cookie guideline (and
+   the GDPR practice it follows) treats a banner whose "reject" is hidden,
+   smaller or two clicks away as consent that was not freely given. Both
+   buttons are the same size, the same weight, side by side.
+
+   WARNING: NOTHING CONSENT-BASED LOADS BEFORE THE ANSWER. The map is a
+   <template> until the "external" category is granted (Contact.astro); this
+   script is what clones it in. Silence is not consent: closing the page or
+   ignoring the notice leaves the map unloaded.
+
+   WARNING: WITHDRAWING WORKS LIKE GIVING. The footer's "cookie preferences"
+   reopens this notice; choosing "reject" after an earlier "accept" removes the
+   loaded frame again. Cookies Google already set stay in the browser - the
+   policy page says so and how to delete them - because a site cannot delete
+   another site's cookies.
+
+   The choice is kept in LOCAL STORAGE, not a cookie: it never needs to reach
+   the server, and a cookie would travel with every request. It expires after
+   CONSENT_MAX_DAYS and when CONSENT_VERSION changes (new optional cookies ->
+   everyone is asked again). Where storage is blocked (private mode), the
+   choice lasts for the page and the notice returns on the next one - asking
+   again is the honest failure; assuming consent is not.
+
+   The notice is shown only WITH JavaScript: without it nothing consent-based
+   can load, so there is nothing to ask about.
+   ================================================================ */
+import { useTranslations, localePath, type Locale } from '../i18n/ui';
+import { POLICY_PATH } from '../consent/cookies';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+/* Newer than every existing database: fall back to the shipped wording until
+   the editor adds the row (same guard as Contact.astro). */
+const metin = (key: Parameters<typeof t>[0], tr: string, en: string) => {
+  const ham = t(key);
+  return ham === key ? (locale === 'tr' ? tr : en) : ham;
+};
+
+const bannerText = metin(
+  'cookie.banner.text',
+  'Bu sitede reklam ya da ziyaretçi takibi için çerez kullanılmaz. İletişim bölümündeki harita Google tarafından sunulur ve Google’ın çerezlerini yerleştirir; harita yalnızca izin verirseniz yüklenir.',
+  'This site uses no cookies for advertising or visitor tracking. The map in the contact section is served by Google and sets Google’s cookies; it loads only if you allow it.',
+);
+const policyTitle = metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Policy');
+const policyHref = localePath(locale, POLICY_PATH[locale]);
+---
+
+<section class="cerez" id="cerez-onay" hidden aria-labelledby="cerez-onay-baslik" data-consent-banner>
+  <h2 class="gizli" id="cerez-onay-baslik">{policyTitle}</h2>
+  <div class="container ic">
+    <p class="metin">
+      {bannerText}{' '}
+      <a href={policyHref}>{policyTitle}</a>
+    </p>
+    <div class="dugmeler">
+      <button type="button" class="dugme" data-consent-reject>{metin('cookie.reject', 'Reddet', 'Reject')}</button>
+      <button type="button" class="dugme" data-consent-accept>{metin('cookie.accept', 'Kabul et', 'Accept')}</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* WARNING: A QUIET BAR ALONG THE BOTTOM, IN THE MENU BAR'S OWN MATERIAL
+     (editor, 2026-09-13: "at the very bottom of the page, horizontal and
+     semi-transparent like the menu bar - the card is too eye-catching"). The
+     surface is the nav's scrolled state copied on purpose - 85% of the page
+     colour, a 12px blur, a hairline on the edge it touches - so the notice
+     reads as part of the site's chrome, not as a pop-up. It does not block the
+     page and does not dim anything behind it.
+
+     WARNING: QUIETER DOES NOT MEAN A HARDER "REJECT". Both answers are the same
+     text control, side by side (KVKK cookie guideline). The bar got calmer; the
+     choice stayed equal. */
+  .cerez {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 150; /* over the bar (100), under the intro and the photo field (200) */
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -1px 0 var(--line);
+    color: var(--ink);
+  }
+
+  .cerez[hidden] {
+    display: none;
+  }
+
+  .ic {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem clamp(1.5rem, 4vw, 3rem);
+    padding-block: 0.9rem;
+  }
+
+  .gizli {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .metin {
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    max-width: 62rem;
+  }
+
+  .metin a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    text-decoration-color: var(--line);
+  }
+
+  .metin a:hover {
+    text-decoration-color: var(--ink);
+  }
+
+  .dugmeler {
+    display: flex;
+    flex: none;
+    gap: 0.5rem;
+  }
+
+  /* Menu-label type (the bar's own voice), a hairline box, a 44px target. */
+  .dugme {
+    min-height: 2.75rem;
+    /* Equal WIDTH too, not only equal style: "Kabul et" is longer than
+       "Reddet" and measured 99 vs 87px - the bigger target is a nudge. */
+    min-width: 7.5rem;
+    padding: 0 1.1rem;
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .dugme:hover {
+    border-color: var(--ink);
+  }
+
+  .dugme:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 700px) {
+    .ic {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .dugmeler {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dugme {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { CONSENT_KEY, CONSENT_VERSION, CONSENT_MAX_DAYS } from '../consent/cookies';
+
+  type Choice = { v: number; external: boolean; at: number };
+
+  const banner = document.querySelector<HTMLElement>('[data-consent-banner]');
+  let memory: Choice | null = null;
+
+  const read = (): Choice | null => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');
+      if (
+        raw &&
+        raw.v === CONSENT_VERSION &&
+        typeof raw.external === 'boolean' &&
+        typeof raw.at === 'number' &&
+        Date.now() - raw.at < CONSENT_MAX_DAYS * 864e5
+      )
+        return raw;
+    } catch {
+      /* storage blocked or unreadable: fall back to this page's answer */
+    }
+    return memory;
+  };
+
+  /* Everything that waits for the "external" category carries
+     data-consent="external" and keeps its content in a <template>. */
+  const apply = () => {
+    const choice = read();
+    for (const el of document.querySelectorAll<HTMLElement>('[data-consent="external"]')) {
+      const template = el.querySelector('template');
+      if (!template) continue;
+      const loaded = el.classList.contains('yuklendi');
+      if (choice?.external && !loaded) {
+        el.insertBefore(template.content.cloneNode(true), template.nextSibling);
+        el.classList.add('yuklendi');
+      } else if (!choice?.external && loaded) {
+        /* Withdrawal: take the frame out again. */
+        for (const node of el.querySelectorAll('iframe')) node.remove();
+        el.classList.remove('yuklendi', 'oynatildi');
+      }
+    }
+    if (banner) banner.hidden = !!choice;
+  };
+
+  const write = (external: boolean) => {
+    memory = { v: CONSENT_VERSION, external, at: Date.now() };
+    try {
+      localStorage.setItem(CONSENT_KEY, JSON.stringify(memory));
+    } catch {
+      /* private mode: the answer lasts for this page */
+    }
+    apply();
+  };
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element | null;
+    if (target?.closest('[data-consent-accept]')) write(true);
+    else if (target?.closest('[data-consent-reject]')) write(false);
+    else if (target?.closest('[data-consent-open]') && banner) {
+      e.preventDefault();
+      banner.hidden = false;
+      banner.querySelector<HTMLElement>('[data-consent-reject]')?.focus();
+    }
+  });
+
+  apply();
+</script>

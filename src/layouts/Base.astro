@@ -18,6 +18,7 @@ import '@fontsource-variable/lora';
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 import PreviewInspect from '../components/PreviewInspect.astro';
 import { loadSettings, loadTheme, themeCss } from '../db';
 import { withBase, type Locale } from '../i18n/ui';
@@ -152,6 +153,9 @@ const anim = theme.motion?.projectFilter ?? 'fade';
       <slot />
     </main>
     <Footer locale={locale} />
+    {/* The cookie notice (§5.226). After the footer so it is last in reading
+        order - the page comes first, the question about it second. */}
+    <CookieConsent locale={locale} />
 
     {
       /* Lets the editing panel point at a sentence in this page. Preview

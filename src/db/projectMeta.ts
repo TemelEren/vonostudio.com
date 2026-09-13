@@ -50,6 +50,24 @@ export function pick(value: string | Localized | undefined | null, locale: Local
 }
 
 /**
+ * The project name in the page language (editor, 2026-09-12: "when the site
+ * language changes the project names must change too").
+ *
+ * WARNING: AN EMPTY SIDE FALLS BACK TO THE OTHER LANGUAGE. Everywhere else a
+ * missing translation stays empty (a Turkish sentence on an English page reads
+ * as right to us and wrong to the visitor), but a project with no NAME is a
+ * blank card, a blank heading and a blank search result. The panel warns about
+ * the missing side instead (lib/siteIcerik.js → projeBaslik, same rule).
+ */
+export function projectTitle(project: Project, locale: Locale): string {
+  const t = project.title;
+  if (typeof t === 'string') return t.trim();
+  if (!t || typeof t !== 'object') return '';
+  const own = pick(t, locale).trim();
+  return own || pick(t, locale === 'tr' ? 'en' : 'tr').trim();
+}
+
+/**
  * The strip a project should print, whatever shape its row is stored in.
  *
  * A project written before the strip became editable carries the five typed

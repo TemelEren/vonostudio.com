@@ -27,8 +27,9 @@ CREATE TABLE projects (
 CREATE TABLE assets (
   path    TEXT PRIMARY KEY,   -- '/projects/vono-ofis.jpg' — başında / var
   mime    TEXT NOT NULL,      -- 'image/jpeg'
-  bytes   BLOB NOT NULL,
-  updated INTEGER NOT NULL    -- unix SANİYE; ETag ve Last-Modified bundan üretilir
+  bytes   BLOB NOT NULL,          -- videoda BOŞ (x'')
+  updated INTEGER NOT NULL,       -- unix SANİYE; ETag ve Last-Modified bundan üretilir
+  file    TEXT                    -- videoda '<sha256>.mp4' (content-medya/ içinde), öteki dosyalarda NULL
 );
 ```
 
@@ -171,6 +172,26 @@ gönderir.
   eski görseli göstermeye devam eder.
 - Fotoğrafları veritabanına koymadan önce sıkıştırın (2000px genişlik yeterli);
   büyük dosyalar hem veritabanını hem sayfa açılışını şişirir.
+
+### Videolar veritabanında durmaz
+
+Video satırının `bytes` sütunu boştur; `file` sütunu, veritabanının yanındaki
+**`content-medya/`** klasöründe duran dosyanın adını taşır (`<sha256>.mp4`).
+
+- **Neden**: SQLite bir BLOB'un parçasını okurken (`substr`) önce değerin
+  **tamamını** yükler — ölçüldü: 400 MB'lık videoda oynatıcının istediği her
+  4 MB için 470 ms ve 400 MB bellek. Tek bir değer 1 GB'ı da aşamaz. Diskteki
+  dosya yalnız istenen aralıkta okunur.
+- **Ad, içeriğin özetidir**: dosya asla yerinde değişmez, taslak ve yayın aynı
+  dosyayı gösterir; yayınlamak videoyu değil 64 karakterlik adı kopyalar.
+- **Site yalnız `^[0-9a-f]{64}\.(mp4|webm)$` biçimindeki adı** klasörle birleştirir;
+  başka bir değer (`../../...`) hiçbir dosya sunmaz. Dosyası olmayan video 404 döner.
+- Klasör `CONTENT_MEDIA_DIR` ile değiştirilebilir; boşsa `CONTENT_DB`'nin yanındaki
+  `content-medya/`dır. Panel de aynı klasöre yazar (`Site:MediaDir`) — iki taraf
+  aynı klasörü görmelidir (Docker'da ikisi de veritabanının klasörünü bağlar).
+- Kullanılmayan video dosyası panel tarafından **yayın ve taslak atma sırasında**,
+  hiçbir veritabanı (yayın · taslak · yedek anlık kopyaları) onu göstermiyorsa ve
+  bir günden eskiyse silinir.
 
 ## Tutarlılık kuralları
 

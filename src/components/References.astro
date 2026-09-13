@@ -36,9 +36,16 @@ const references = loadReferences();
 </section>
 
 <style>
+  /* A little air between the heading and the strip, so the heading reads as
+     the strip's label rather than touching the logos. */
+  .section-head {
+    margin-bottom: clamp(0.5rem, 1vw, 1rem);
+  }
+
+  /* No rules above and below the strip: the page carries no divider lines
+     (styles/global.css). */
   .marquee {
     overflow: hidden;
-    border-block: 1px solid var(--line);
     padding-block: 2.25rem;
     /* Fade the strip out toward both edges. */
     mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
@@ -62,8 +69,10 @@ const references = loadReferences();
     padding-right: clamp(3.5rem, 7vw, 6.5rem);
   }
 
+  /* Larger marks (editor, 2026-09-12: "the logos could be bigger"): 2.6rem
+     read as a row of favicons under a portfolio of full-width photographs. */
   .group img {
-    height: 2.6rem;
+    height: clamp(3rem, 4.4vw, 4.5rem);
     width: auto;
     opacity: 0.55;
     filter: grayscale(1);

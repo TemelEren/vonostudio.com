@@ -1,0 +1,204 @@
+---
+/* The cookie policy page body, shared by /cerez-politikasi and /en/cookie-policy.
+
+   Two halves, on purpose:
+   - the PROSE (who we are, what a cookie is, how to withdraw) is the editor's
+     copy - cookie.policy.body, plain text with paragraphs (i18n/plainText.ts);
+   - the TABLE is generated from consent/cookies.ts - the code's own inventory.
+     A table typed in the panel would drift from what the site really sets,
+     and a cookie policy that is wrong is worse than none.
+
+   WARNING: NOT LEGAL ADVICE. The default wording is a careful draft written
+   against the KVKK cookie guideline; have it reviewed before relying on it. */
+import { useTranslations, type Locale } from '../i18n/ui';
+import { paragraphs } from '../i18n/plainText';
+import { COOKIES, CATEGORY_LABEL } from '../consent/cookies';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const metin = (key: Parameters<typeof t>[0], tr: string, en: string) => {
+  const ham = t(key);
+  return ham === key ? (locale === 'tr' ? tr : en) : ham;
+};
+
+const title = metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Policy');
+const body = metin(
+  'cookie.policy.body',
+  'Bu sayfa, vonostudio.com sitesinde hangi çerezlerin ve benzeri teknolojilerin kullanıldığını açıklar. Veri sorumlusu VONO MİMARLIK TASARIM İNŞAAT’tır.\n\nÇerez nedir?\nÇerezler, ziyaret ettiğiniz sitenin tarayıcınıza kaydettiği küçük dosyalardır. Benzer şekilde yerel depolama da tarayıcınızda küçük bilgiler saklar.\n\nHangi çerezleri kullanıyoruz?\nSitemizde reklam, pazarlama ya da ziyaretçi takibi (analiz) çerezi kullanılmaz. Yalnızca sitenin çalışması için zorunlu olan kayıtlar ve sizin izninize bağlı olarak İletişim bölümündeki Google Haritalar kullanılır. Ayrıntılar aşağıdaki tablodadır.\n\nİzin ve tercihlerinizi değiştirme:\nHarita, siz izin verene kadar yüklenmez. Tercihinizi istediğiniz zaman sayfanın altındaki “Çerez tercihleri” bağlantısından değiştirebilir, izninizi geri alabilirsiniz. Daha önce yerleştirilmiş Google çerezlerini tarayıcınızın ayarlarından silebilirsiniz.\n\nÜçüncü taraflar:\nGoogle’ın çerezleri Google’ın kendi politikasına tabidir: https://policies.google.com/technologies/cookies\n\nBize ulaşın:\nKişisel verilerinizle ilgili sorularınız ve 6698 sayılı Kanun’un 11. maddesindeki haklarınız için info@vonostudio.com adresine yazabilirsiniz.',
+  'This page explains which cookies and similar technologies are used on vonostudio.com. The data controller is VONO MİMARLIK TASARIM İNŞAAT.\n\nWhat is a cookie?\nCookies are small files a website stores in your browser. Local storage similarly keeps small pieces of information in your browser.\n\nWhich cookies do we use?\nThis site uses no advertising, marketing or visitor tracking (analytics) cookies. Only records strictly necessary for the site to work are used, and - with your permission - Google Maps in the contact section. The table below lists them.\n\nConsent and changing your choice:\nThe map does not load until you allow it. You can change your choice or withdraw your consent at any time from the “Cookie preferences” link at the bottom of the page. Google cookies already placed can be deleted in your browser settings.\n\nThird parties:\nGoogle’s cookies are governed by Google’s own policy: https://policies.google.com/technologies/cookies\n\nContact us:\nFor questions about your personal data and your rights under Article 11 of Law No. 6698, write to info@vonostudio.com.',
+);
+const blocks = paragraphs(body);
+/* An outside address opens in a new tab; a mail address does not need one. */
+const disari = (href: string) => href.startsWith('https://');
+
+const H = locale === 'tr'
+  ? { name: 'Ad', provider: 'Sağlayıcı', type: 'Tür', purpose: 'Amaç', duration: 'Süre', more: 'Sağlayıcının açıklaması' }
+  : { name: 'Name', provider: 'Provider', type: 'Type', purpose: 'Purpose', duration: 'Duration', more: 'Provider’s explanation' };
+const prefs = locale === 'tr' ? 'Çerez tercihlerini aç' : 'Open cookie preferences';
+const updated = locale === 'tr' ? 'Sitede kullanılan çerezler' : 'Cookies used on this site';
+---
+
+<section class="section politika">
+  <div class="container">
+    <h1>{title}</h1>
+
+    <div class="yazi">
+      {blocks.map((b) => (
+        <p>
+          {b.lead.length > 0 && (
+            <strong class="lead">
+              {b.lead.map((p) =>
+                p.href ? (
+                  <a href={p.href} target={disari(p.href) ? '_blank' : undefined} rel={disari(p.href) ? 'noopener noreferrer' : undefined}>{p.text}</a>
+                ) : (
+                  p.text
+                )
+              )}
+            </strong>
+          )}
+          {b.lines.map((line) => (
+            <span class="satir">
+              {line.map((p) =>
+                p.href ? (
+                  <a href={p.href} target={disari(p.href) ? '_blank' : undefined} rel={disari(p.href) ? 'noopener noreferrer' : undefined}>{p.text}</a>
+                ) : (
+                  p.text
+                )
+              )}
+            </span>
+          ))}
+        </p>
+      ))}
+    </div>
+
+    <h2 class="tablo-baslik">{updated}</h2>
+    <div class="tablo-kap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{H.name}</th>
+            <th scope="col">{H.provider}</th>
+            <th scope="col">{H.type}</th>
+            <th scope="col">{H.purpose}</th>
+            <th scope="col">{H.duration}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COOKIES.map((c) => (
+            <tr>
+              <td class="ad">{c.name}</td>
+              <td>{c.provider}</td>
+              <td>{CATEGORY_LABEL[c.category][locale]}</td>
+              <td>
+                {c.purpose[locale]}
+                {c.more && (
+                  <>
+                    {' '}
+                    <a href={c.more} target="_blank" rel="noopener noreferrer">{H.more}</a>
+                  </>
+                )}
+              </td>
+              <td>{c.duration[locale]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <button type="button" class="tercih" data-consent-open>{prefs}</button>
+  </div>
+</section>
+
+<style>
+  h1 {
+    font-size: var(--t-section);
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .yazi {
+    max-width: 46rem;
+    display: grid;
+    gap: 1.2rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .yazi .lead,
+  .yazi .satir {
+    display: block;
+  }
+
+  .yazi .lead {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .yazi a,
+  td a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    overflow-wrap: anywhere;
+  }
+
+  .tablo-baslik {
+    font-size: var(--t-item-sm);
+    margin: clamp(2.5rem, 5vw, 3.5rem) 0 1rem;
+  }
+
+  /* Wider than a phone: the table scrolls inside its own box, the page never
+     scrolls sideways. */
+  .tablo-kap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    min-width: 44rem;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  th {
+    text-align: left;
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 0 1rem 0.7rem 0;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  td {
+    padding: 0.9rem 1rem 0.9rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  td.ad {
+    font-family: var(--font-display);
+    white-space: nowrap;
+  }
+
+  .tercih {
+    margin-top: clamp(2rem, 4vw, 3rem);
+    min-height: 2.75rem;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid var(--ink);
+    font-family: var(--font-display);
+    font-size: var(--t-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .tercih:hover {
+    background: var(--ink);
+    color: var(--bg);
+  }
+</style>

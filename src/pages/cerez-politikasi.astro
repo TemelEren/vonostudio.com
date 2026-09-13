@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import CookiePolicy from '../components/CookiePolicy.astro';
+import { useTranslations, localePath } from '../i18n/ui';
+import { POLICY_PATH } from '../consent/cookies';
+
+const locale = 'tr' as const;
+const t = useTranslations(locale);
+const baslik = (() => {
+  const v = t('cookie.policy.title');
+  return v === 'cookie.policy.title' ? 'Çerez Politikası' : v;
+})();
+---
+
+<Base
+  locale={locale}
+  title={`${baslik} | Vono Studio`}
+  description="vonostudio.com sitesinde kullanılan çerezler ve tercihlerinizi nasıl değiştirebileceğiniz."
+  altUrl={localePath('en', POLICY_PATH.en)}
+>
+  <CookiePolicy locale={locale} />
+</Base>

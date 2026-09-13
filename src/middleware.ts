@@ -1,3 +1,5 @@
+import { createReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
 import { defineMiddleware } from 'astro:middleware';
 import { loadAssetBytes, loadAssetMeta, loadAssetSlice, previewAllowed, withDatabase } from './db';
 
@@ -145,6 +147,29 @@ export const onRequest = defineMiddleware((context, next) => {
       return new Response(null, {
         status: 416,
         headers: { ...headers, 'Content-Range': `bytes */${asset.size}` },
+      });
+    }
+
+    /* A FILM IS STREAMED FROM DISK (panel §5.223): only the bytes a player
+       asks for are read, and nothing is held in memory — a 2 GB video costs
+       the same as a 2 MB one. A HEAD request opens no file at all. */
+    if (asset.filePath) {
+      const head = context.request.method === 'HEAD';
+      const stream = (start: number, end: number) =>
+        head ? null : (Readable.toWeb(createReadStream(asset.filePath!, { start, end })) as ReadableStream);
+      if (range) {
+        return new Response(stream(range.start, range.end), {
+          status: 206,
+          headers: {
+            ...headers,
+            'Content-Range': `bytes ${range.start}-${range.end}/${asset.size}`,
+            'Content-Length': String(range.end - range.start + 1),
+          },
+        });
+      }
+      return new Response(asset.size > 0 ? stream(0, asset.size - 1) : null, {
+        status: 200,
+        headers: { ...headers, 'Content-Length': String(asset.size) },
       });
     }
 
