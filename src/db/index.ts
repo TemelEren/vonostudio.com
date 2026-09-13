@@ -5,6 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { Locale } from '../i18n/locale';
 import type { About, Project, Reference, Service, Settings, Theme } from './types';
 import { resolveTheme } from './theme';
+import { resolveStringsOff } from '../i18n/stringsOff';
 
 export type * from './types';
 export * from './projectMeta';
@@ -161,6 +162,10 @@ export const loadProjectCategories = (): ProjectCategory[] =>
    page in its shipped order rather than dropping a section (db/sectionOrder.ts). */
 export const loadSectionOrder = (): SectionKey[] =>
   resolveSectionOrder(optionalDocument<unknown>('sectionOrder'));
+
+/* Optional: no row means every interface string is on (i18n/stringsOff.ts). */
+export const loadStringsOff = (): Set<string> =>
+  resolveStringsOff(optionalDocument<unknown>('stringsOff'));
 
 /* Optional as well: no row means no Instagram strip under the map (db/instagram.ts). */
 export const loadInstagram = (): InstagramPost[] =>

@@ -39,6 +39,8 @@ interface Props {
   schema?: unknown[];
   /** Keep this page out of search results (used by 404). */
   noindex?: boolean;
+  /** This page's own keywords (project pages, §5.231). Empty: the site-wide list. */
+  keywords?: string;
 }
 const settings = loadSettings();
 /* The editable look. A database with no theme row resolves to the design the
@@ -53,6 +55,7 @@ const {
   type = 'website',
   schema = [],
   noindex = false,
+  keywords: pageKeywords = '',
 } = Astro.props;
 
 const site = Astro.site!;
@@ -80,6 +83,10 @@ const jsonLd = graph(site, locale, schema);
    with no `lang` either. It cost nothing to spot in a browser and would have
    been invisible in review. */
 const anim = theme.motion?.projectFilter ?? 'fade';
+/* The opening logo animation's length (db/theme.ts → INTRO_MS). Also an
+   attribute on <html>, for the same reason as `anim`: the intro starts before
+   anything else runs and must not wait for a fetch or a second script. */
+const introMs = theme.motion?.introMs ?? 2800;
 
 /* ---- meta keywords (§5.228) ----
    Google has ignored this tag for years, but SEO checkers still count it and
@@ -90,6 +97,9 @@ const anim = theme.motion?.projectFilter ?? 'fade';
    separated term rather than mid-word; an empty value writes no tag at all. */
 const tUi = useTranslations(locale);
 const kwHam = (() => {
+  /* A page that brings its own list (a project, §5.231) wins; the same 260
+     character cut below applies to it too. */
+  if (pageKeywords.trim()) return pageKeywords;
   const v = tUi('meta.keywords');
   if (v !== 'meta.keywords') return v;
   return locale === 'tr'
@@ -105,7 +115,7 @@ const keywords = (() => {
 ---
 
 <!doctype html>
-<html lang={locale === 'tr' ? 'tr-TR' : 'en-US'} data-anim={anim}>
+<html lang={locale === 'tr' ? 'tr-TR' : 'en-US'} data-anim={anim} data-intro-ms={introMs}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

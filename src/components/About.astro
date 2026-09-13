@@ -25,9 +25,11 @@ const lead = about.intro[locale][0] ?? '';
 
 <section class="section" id="hakkimizda">
   <div class="container">
-    <div class="section-head" data-reveal>
-      <h2 class="section-title">{t('about.title')}</h2>
-    </div>
+    {t('about.title') && (
+      <div class="section-head" data-reveal>
+        <h2 class="section-title">{t('about.title')}</h2>
+      </div>
+    )}
 
     {/* WARNING: PICTURE LEFT, WORDS RIGHT (editor, 2026-09-12). The previous
         turn centred a single column; with one paragraph left, that column was

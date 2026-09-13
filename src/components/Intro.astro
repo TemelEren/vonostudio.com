@@ -58,8 +58,22 @@ import Logo from './Logo.astro';
     } else {
       html.classList.add('intro-active', 'intro-lock');
 
-      // Failsafe: never leave the page stuck behind the overlay.
-      const failsafe = setTimeout(cleanup, 5000);
+      /* ---- LENGTH (editable, db/theme.ts → INTRO_MS) ----
+         The timings below are the shipped design and add up to ~2800ms. The
+         editor sets a TOTAL, so every tween is scaled by one factor through
+         `timeScale` - the proportions between drawing, filling and flying stay
+         the same whatever the length.
+         WARNING: A TIMELINE'S OWN `delay` IS PARENT TIME and timeScale does
+         not touch it, so the pause before the flight is scaled by hand.
+         WARNING: A MISSING OR NONSENSE ATTRIBUTE MEANS THE DESIGN LENGTH. */
+      const DESIGN_MS = 2800;
+      const asked = Number(html.dataset.introMs);
+      const totalMs = Number.isFinite(asked) && asked >= 1000 && asked <= 8000 ? asked : DESIGN_MS;
+      const scale = totalMs / DESIGN_MS;
+
+      // Failsafe: never leave the page stuck behind the overlay. It follows
+      // the length, or an 8-second intro would be cut off at 5 seconds.
+      const failsafe = setTimeout(cleanup, totalMs + 2200);
 
       try {
         const paths = [...stageLogo.querySelectorAll<SVGPathElement>('path')];
@@ -82,7 +96,7 @@ import Logo from './Logo.astro';
           const to = navLogo.getBoundingClientRect();
           gsap
             .timeline({
-              delay: 0.2,
+              delay: 0.2 * scale,
               onComplete: () => {
                 clearTimeout(failsafe);
                 cleanup();
@@ -96,7 +110,8 @@ import Logo from './Logo.astro';
               ease: 'power3.inOut',
               transformOrigin: '50% 50%',
             })
-            .to(bg, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.35);
+            .to(bg, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.35)
+            .timeScale(1 / scale);
         };
 
         // 1 — Draw the glyph contours, then fill them in.
@@ -104,7 +119,8 @@ import Logo from './Logo.astro';
           .timeline({ defaults: { ease: 'power2.inOut' }, onComplete: fly })
           .to(paths, { strokeDashoffset: 0, duration: 1.15, stagger: 0.12 })
           .to(paths, { fillOpacity: 1, duration: 0.6, stagger: 0.12, ease: 'power2.out' }, '-=0.8')
-          .to(paths, { strokeOpacity: 0, duration: 0.35 }, '-=0.25');
+          .to(paths, { strokeOpacity: 0, duration: 0.35 }, '-=0.25')
+          .timeScale(1 / scale);
       } catch {
         clearTimeout(failsafe);
         cleanup();

@@ -1,5 +1,5 @@
 // All editable copy lives in the content database — see DATA-MODEL.md.
-import { loadServices, loadStrings } from '../db';
+import { loadServices, loadStrings, loadStringsOff } from '../db';
 import type { Locale } from './locale';
 // Type-only: the seed file defines which keys exist, so a typo in t('...')
 // is still a build error even though the strings now come from SQLite.
@@ -11,7 +11,15 @@ export type UIKey = keyof typeof trSeed;
 
 export function useTranslations(locale: Locale) {
   const strings = loadStrings(locale);
+  /* WARNING: A SWITCHED-OFF STRING IS AN EMPTY STRING, NOT THE KEY (§5.231).
+     Every place that prints one must then leave its element out - an empty
+     <h2> or a nameless button is not "hidden". Components test for '' and the
+     `metin()` fallbacks deliberately let '' through (they only replace the KEY,
+     which is what a missing row returns). Locked keys never come back empty:
+     i18n/stringsOff.ts drops them from the row. */
+  const off = loadStringsOff();
   return function t(key: UIKey): string {
+    if (off.has(key)) return '';
     return strings[key] ?? key;
   };
 }

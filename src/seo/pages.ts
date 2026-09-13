@@ -30,7 +30,7 @@ export function homeSchema(site: URL, locale: Locale) {
     },
     {
       '@type': 'ItemList',
-      name: t('projects.title'),
+      name: t('projects.title') || (locale === 'tr' ? 'Projeler' : 'Projects'),
       numberOfItems: projects.length,
       itemListElement: projects.map((p, i) => ({
         '@type': 'ListItem',
@@ -66,16 +66,31 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
          at all, and spreading it threw "not iterable" and took the page down
          (measured). The cover leads because it is the share image; films are
          left out because schema.org's `image` wants pictures. */
-      image: [
-        ...new Set([
-          project.cover,
-          ...resolveProjectMedia(project)
-            .filter((m) => m.kind === 'image')
-            .map((m) => m.src),
-        ]),
-      ]
-        .filter(Boolean)
-        .map((src) => abs(site, src)),
+      /* Each picture is an ImageObject now (§5.231): the editor's per-image
+         description travels as its `caption`, which is what image search
+         reads. Pictures without one stay plain objects - an invented caption
+         would be worse than none. */
+      image: (() => {
+        const media = resolveProjectMedia(project).filter((m) => m.kind === 'image');
+        /* WARNING: THE CAPTION IS LOOKED UP BY FILE, NOT TAKEN FROM THE FIRST
+           OCCURRENCE. The cover is usually also the first item of the strip; a
+           de-duplication that kept the first entry kept the cover's EMPTY
+           caption and dropped the described one (measured: no caption in the
+           JSON-LD although the picture had one). */
+        const captionOf = new Map<string, string>();
+        for (const m of media) {
+          const c = m.alt[locale] || m.alt[locale === 'tr' ? 'en' : 'tr'];
+          if (c && !captionOf.has(m.src)) captionOf.set(m.src, c);
+        }
+        return [...new Set([project.cover, ...media.map((m) => m.src)])]
+          .filter(Boolean)
+          .map((src) => ({
+            '@type': 'ImageObject',
+            contentUrl: abs(site, src),
+            caption: captionOf.get(src) || undefined,
+          }));
+      })(),
+      keywords: String(project.seoKeywords?.[locale] ?? '').trim() || undefined,
       dateCreated: year || undefined,
       genre: category || undefined,
       inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
@@ -85,7 +100,8 @@ export function projectSchema(site: URL, locale: Locale, project: Project) {
     },
     breadcrumbSchema(site, [
       [loadSettings().siteName, localePath(locale, '/')],
-      [t('projects.title'), localePath(locale, '/#projeler')],
+      /* A switched-off heading (§5.231) must not leave a nameless crumb. */
+      [t('projects.title') || (locale === 'tr' ? 'Projeler' : 'Projects'), localePath(locale, '/#projeler')],
       [projectTitle(project, locale), projectPath(locale, project.slug)],
     ]),
   ];

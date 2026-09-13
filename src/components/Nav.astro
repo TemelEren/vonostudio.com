@@ -46,7 +46,10 @@ const links = loadSectionOrder()
        DOM instead of keeping its own copy of the section order, which would
        be a second list to keep in step (same reason as the menu itself). */
     anchor: SECTION_ANCHOR[k],
-  }));
+  }))
+  /* A label switched off in the panel (§5.231) takes its link out of the bar
+     and the phone menu; the section itself stays on the page. */
+  .filter((link) => link.label);
 
 /* THE MARK SITS IN THE MIDDLE, SO THE LINKS ARE SPLIT AROUND IT - and the split
    is a COUNT, never a fixed list of names. The warning above still holds: the

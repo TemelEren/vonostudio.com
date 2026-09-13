@@ -11,9 +11,11 @@ const list = services();
 
 <section class="section" id="hizmetler">
   <div class="container">
-    <div class="section-head" data-reveal>
-      <h2 class="section-title">{t('services.title')}</h2>
-    </div>
+    {t('services.title') && (
+      <div class="section-head" data-reveal>
+        <h2 class="section-title">{t('services.title')}</h2>
+      </div>
+    )}
 
     <ul class="services">
       {

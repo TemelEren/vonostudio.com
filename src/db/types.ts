@@ -88,6 +88,13 @@ export interface ProjectMediaItem {
   span?: number;
   /** 'w/h', e.g. '16/9'. Absent: natural for a picture, 16/9 for a video. */
   ratio?: string;
+  /**
+   * What the picture shows, for search engines and screen readers (§5.231).
+   * A plain string reads the same in both languages. Absent: the project
+   * title and the item's number — never an empty alt, which would tell a
+   * search engine the picture is decoration.
+   */
+  alt?: string | Localized;
 }
 
 export interface Project {
@@ -118,6 +125,11 @@ export interface Project {
   category?: Localized;
   status?: Localized;
   excerpt: Localized;
+  /**
+   * Search keywords for this project's page, comma separated (§5.231). Absent
+   * or empty in a language: the site-wide `meta.keywords` string is used.
+   */
+  seoKeywords?: Localized;
   body: Localized<string[]>;
   /**
    * The card and share image. Kept apart from `media` on purpose: it is what
@@ -155,7 +167,12 @@ export interface Theme {
    * CSS: it names one of a fixed set of transitions the stylesheet already
    * carries, so an editor picks a behaviour rather than writing one.
    */
-  motion?: { projectFilter: string; filterMs: number };
+  motion?: {
+    projectFilter: string;
+    filterMs: number;
+    /** Total length of the opening logo animation, ms (db/theme.ts → INTRO_MS). */
+    introMs?: number;
+  };
   /** Fonts the editor uploaded. Validated in db/theme.ts before they reach CSS. */
   customFonts?: { key: string; label: string; path: string }[];
 }

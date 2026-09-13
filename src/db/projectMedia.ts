@@ -98,6 +98,42 @@ export interface ResolvedMedia {
   span: number;
   /** Empty means "keep the file's own shape"; only a picture can do that. */
   ratio: string;
+  /** The editor's description per language; empty where none was written. */
+  alt: { tr: string; en: string };
+}
+
+/* An alt text is plain text the page escapes like any other attribute; it is
+   only trimmed and capped so a pasted paragraph does not become a 2 KB
+   attribute. 150 characters is where screen readers and image search both
+   stop being useful. */
+const ALT_MAX = 150;
+function altText(value: unknown): { tr: string; en: string } {
+  const cut = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, ALT_MAX);
+  if (typeof value === 'string') {
+    const s = cut(value);
+    return { tr: s, en: s };
+  }
+  if (value && typeof value === 'object') {
+    const o = value as Record<string, unknown>;
+    return { tr: cut(o.tr), en: cut(o.en) };
+  }
+  return { tr: '', en: '' };
+}
+
+/**
+ * The alt text a picture is printed with.
+ *
+ * WARNING: NEVER EMPTY. An empty alt tells search engines and screen readers
+ * the picture is decoration; a project photograph is content. The fallback is
+ * the project title and the item's position, which is what the page printed
+ * before per-image descriptions existed - so an untouched project renders
+ * exactly as it did. A description written in only one language is used for
+ * the other too: a Turkish description on the English page still beats a
+ * generic one.
+ */
+export function mediaAlt(item: ResolvedMedia, locale: 'tr' | 'en', title: string, index: number): string {
+  const other = locale === 'tr' ? 'en' : 'tr';
+  return item.alt[locale] || item.alt[other] || (index === 0 ? title : `${title} — ${index + 1}`);
 }
 
 /**
@@ -144,6 +180,7 @@ export function resolveProjectMedia(project: Project): ResolvedMedia[] {
         poster: kind === 'video' ? String(item.poster ?? '').trim() : '',
         span: span(item.span, i),
         ratio: ratio(item.ratio, kind),
+        alt: altText(item.alt),
       };
     });
 }

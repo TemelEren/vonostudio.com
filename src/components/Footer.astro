@@ -20,7 +20,7 @@ const politika = metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Poli
 
 <footer class="footer">
   <div class="container top">
-    <span>© {year} Vono Studio — {t('footer.rights')}</span>
+    <span>© {year} Vono Studio{t('footer.rights') && ` — ${t('footer.rights')}`}</span>
     <span class="yasal">
       <a href={localePath(locale, POLICY_PATH[locale])}>{politika}</a>
       <button type="button" data-consent-open>{tercihler}</button>

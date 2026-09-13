@@ -37,8 +37,13 @@ const govde = metin(
    two lines instead of composing from nothing - that is the "quick shortcut"
    this block is for. Both are editable copy, not code: an office changes the
    wording of its own enquiries far more often than it changes its markup. */
-const mailHref =
-  `mailto:${email}?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`;
+/* A subject or body switched off (§5.231) is left out of the link rather than
+   sent as an empty parameter. */
+const mailQuery = [
+  konu ? `subject=${encodeURIComponent(konu)}` : '',
+  govde ? `body=${encodeURIComponent(govde)}` : '',
+].filter(Boolean).join('&');
+const mailHref = `mailto:${email}${mailQuery ? `?${mailQuery}` : ''}`;
 
 /* WARNING: THE LABEL SAYS WHAT THE THING IS, NOT AN INVITATION (editor,
    2026-09-12: "next to the mail it says 'let's talk', it should say e-mail").
@@ -81,7 +86,7 @@ const telHref = phone ? `tel:${phone.replace(/[^\d+]/g, '')}` : '';
    button. */
 const waRakam = phone.trim().startsWith('+') ? phone.replace(/\D/g, '') : '';
 const waHref = waRakam
-  ? `https://wa.me/${waRakam}?text=${encodeURIComponent(konu)}`
+  ? `https://wa.me/${waRakam}${konu ? `?text=${encodeURIComponent(konu)}` : ''}`
   : '';
 
 /* Documented, cross-platform and keyless: the maps URL scheme opens the native
@@ -92,6 +97,11 @@ const yolHref = address
 /* One label for both places that open directions: the line under the address
    and the pin on the map. */
 const yolEtiket = metin('contact.directions', 'Yol tarifi', 'Directions');
+/* Switched off (§5.231), the visible "Directions" text goes, but the map pin
+   still needs an accessible name - it keeps the built-in one. */
+const yolAdi = yolEtiket || (locale === 'tr' ? 'Yol tarifi' : 'Directions');
+const cagriEtiket = metin('contact.call', 'Ara', 'Call');
+const waEtiket = metin('contact.whatsapp', 'WhatsApp', 'WhatsApp');
 
 /* ---- Social: a black-and-white mark per platform ----
    Glyphs from Simple Icons (CC0), one 24x24 path each, painted with
@@ -198,9 +208,11 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
 
 <section class="section" id="iletisim">
   <div class="container">
-    <div class="section-head" data-reveal>
-      <h2 class="section-title">{t('contact.title')}</h2>
-    </div>
+    {t('contact.title') && (
+      <div class="section-head" data-reveal>
+        <h2 class="section-title">{t('contact.title')}</h2>
+      </div>
+    )}
 
     {/* WARNING: THE FORM IS GONE (editor, 2026-09-12: "you can remove the
         contact form"). Mail and phone now sit side by side as the two direct
@@ -210,7 +222,7 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
         back. */}
     <div class="ust">
       <div data-reveal>
-        <h4>{epostaEtiket}</h4>
+        {epostaEtiket && <h4>{epostaEtiket}</h4>}
         <a class="big-mail" href={mailHref}>
           <span class="mail">{email}</span>
           <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -238,17 +250,17 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
         }
       </div>
       <div data-reveal>
-        <h4>{t('contact.phone.label')}</h4>
+        {t('contact.phone.label') && <h4>{t('contact.phone.label')}</h4>}
         {/* The number is large like the mail but stays plain text: the two
             buttons carry the actions, so the visitor chooses call or WhatsApp
             rather than having the page decide what a tap on it means. */}
         <p class="tel">{phone}</p>
         <div class="dugmeler">
-          {telHref && <a class="dugme" href={telHref}>{metin('contact.call', 'Ara', 'Call')}</a>}
+          {telHref && cagriEtiket && <a class="dugme" href={telHref}>{cagriEtiket}</a>}
           {
-            waHref && (
+            waHref && waEtiket && (
               <a class="dugme" href={waHref} target="_blank" rel="noopener noreferrer">
-                {metin('contact.whatsapp', 'WhatsApp', 'WhatsApp')}
+                {waEtiket}
               </a>
             )
           }
@@ -258,12 +270,12 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
 
     <div class="cols">
       <div data-reveal>
-        <h4>{t('contact.address.label')}</h4>
+        {t('contact.address.label') && <h4>{t('contact.address.label')}</h4>}
         {
           yolHref ? (
             <a class="adres" href={yolHref} target="_blank" rel="noopener noreferrer">
               <span>{address}</span>
-              <span class="eylem">
+              <span class="eylem" hidden={!yolEtiket}>
                 {yolEtiket}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                   <path d="M7 17 17 7M9 7h8v8" />
@@ -276,7 +288,7 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
         }
       </div>
       <div data-reveal>
-        <h4>{t('contact.social.label')}</h4>
+        {t('contact.social.label') && <h4>{t('contact.social.label')}</h4>}
         <ul class="sosyal">
           {
             socials.map((s) => (
@@ -312,7 +324,7 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
           <p>{haritaIzinMetni}</p>
           <div class="harita-izin-dugmeler">
             <button type="button" class="dugme" data-consent-accept>{haritaYukleEtiket}</button>
-            <a class="dugme" href={yolHref} target="_blank" rel="noopener noreferrer">{yolEtiket}</a>
+            {yolEtiket && <a class="dugme" href={yolHref} target="_blank" rel="noopener noreferrer">{yolEtiket}</a>}
             <a class="harita-izin-politika" href={politikaHref}>{metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Policy')}</a>
           </div>
         </div>
@@ -321,8 +333,8 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
           href={yolHref}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={yolEtiket}
-          title={yolEtiket}
+          aria-label={yolAdi}
+          title={yolAdi}
         >
           <svg viewBox="0 0 28 40" aria-hidden="true">
             <path d="M14 40C6 26 1 22 1 14A13 13 0 1 1 27 14c0 8-5 12-13 26Z" />
@@ -341,7 +353,7 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
     insta.length > 0 && (
       <div class="insta" data-reveal>
         <div class="container insta-bas">
-          <h4>{instaEtiket}</h4>
+          {instaEtiket && <h4>{instaEtiket}</h4>}
           {instaHesap && (
             <a class="insta-hesap" href={instaHesap.href} target="_blank" rel="noopener noreferrer">
               {instaHesap.ad}
@@ -350,7 +362,7 @@ const politikaHref = localePath(locale, POLICY_PATH[locale]);
         </div>
         <ul class="insta-serit">
           {insta.map((m, i) => {
-            const ad = `${instaEtiket} — ${i + 1}`;
+            const ad = `${instaEtiket || 'Instagram'} — ${i + 1}`;
             const icerik =
               m.kind === 'video' ? (
                 <video

@@ -12,9 +12,11 @@ const references = loadReferences();
 
 <section class="section" id="referanslar">
   <div class="container">
-    <div class="section-head" data-reveal>
-      <h2 class="section-title">{t('references.title')}</h2>
-    </div>
+    {t('references.title') && (
+      <div class="section-head" data-reveal>
+        <h2 class="section-title">{t('references.title')}</h2>
+      </div>
+    )}
   </div>
 
   <div class="marquee" data-reveal>

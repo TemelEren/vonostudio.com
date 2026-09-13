@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { metaText, projectTitle, resolveProjectMedia, type Project } from '../db';
+import { mediaAlt, metaText, projectTitle, resolveProjectMedia, type Project } from '../db';
 import { useTranslations, localePath, type Locale } from '../i18n/ui';
 import { projectPath, projectSchema } from '../seo/pages';
 
@@ -37,6 +37,11 @@ const kicker = metaText(project, 'category', locale);
    if it has one, otherwise its cover and gallery (db/projectMedia.ts). */
 const media = resolveProjectMedia(project);
 
+/* Per-project search keywords (§5.231). An empty language falls back to the
+   site-wide list in Base.astro rather than to the other language: Turkish
+   keywords on the English page would describe a different search. */
+const seoKeywords = String(project.seoKeywords?.[locale] ?? '').replace(/\s+/g, ' ').trim();
+
 /* WARNING: NO "WATCH WITH SOUND" BADGE ANY MORE (editor, 2026-09-13: "the
    'sesli izle' text on the video should go"). A film on the wall now opens in
    the same dark full-screen field as a picture (§5.227) - with its controls and
@@ -50,12 +55,13 @@ const media = resolveProjectMedia(project);
   description={project.excerpt[locale]}
   altUrl={altUrl}
   image={project.cover}
+  keywords={seoKeywords}
   type="article"
   schema={projectSchema(Astro.site!, locale, project)}
 >
   <article class="detail">
     <div class="container head">
-      <a class="back" href={localePath(locale, '/#projeler')}>← {t('project.back')}</a>
+      {t('project.back') && <a class="back" href={localePath(locale, '/#projeler')}>← {t('project.back')}</a>}
 
     {/* WARNING: ONLY THE TITLE SITS ABOVE THE WORK (editor, 2026-09-12).
         The summary and the credits moved BELOW the pictures: measured at
@@ -116,7 +122,7 @@ const media = resolveProjectMedia(project);
                   data-full={m.src}
                   data-kind="video"
                   data-poster={m.poster || undefined}
-                  aria-label={`${title} — ${i + 1} (video)`}
+                  aria-label={`${mediaAlt(m, locale, title, i)} (video)`}
                 >
                   <video
                     src={m.src}
@@ -140,11 +146,14 @@ const media = resolveProjectMedia(project);
                   type="button"
                   class="zoom"
                   data-full={m.src}
-                  aria-label={`${title} — ${i + 1}`}
+                  aria-label={mediaAlt(m, locale, title, i)}
                 >
+                  {/* The editor's per-picture description (§5.231), or the
+                      title and position when none was written. The full-screen
+                      view reads the same text off the button's label. */}
                   <img
                     src={m.src}
-                    alt={i === 0 ? title : `${title} — ${i + 1}`}
+                    alt={mediaAlt(m, locale, title, i)}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     fetchpriority={i === 0 ? 'high' : undefined}
                     decoding="async"

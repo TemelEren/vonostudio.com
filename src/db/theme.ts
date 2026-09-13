@@ -101,6 +101,23 @@ export const FILTER_ANIMS: Record<string, { label: string }> = {
 /** Bounds a transition can hold without becoming either invisible or a wait. */
 export const FILTER_MS = { min: 120, max: 1200, default: 420 };
 
+/**
+ * How long the opening logo animation takes, end to end (ms): the wordmark
+ * draws itself, fills in, then flies into the menu bar while the white cover
+ * fades away.
+ *
+ * WARNING: THE DEFAULT IS THE MEASURED LENGTH OF THE SHIPPED TIMELINE, not a
+ * round number. Intro.astro's timings add up to ~2.8s (draw 1.77s + a 0.2s
+ * pause + the 0.85s flight), and the script scales every one of them by
+ * `introMs / INTRO_MS.default`. A default that differed from the real length
+ * would silently speed up or slow down a site nobody had touched.
+ *
+ * WARNING: THE PAGE IS LOCKED WHILE IT RUNS. The ceiling exists because every
+ * extra second is a second a visitor cannot scroll or click; the floor because
+ * below ~1s the drawing is no longer readable as a drawing.
+ */
+export const INTRO_MS = { min: 1000, max: 8000, default: 2800 };
+
 /** The look the site had before any of this was editable. */
 export const THEME_DEFAULT: Theme = {
   colors: {
@@ -116,7 +133,7 @@ export const THEME_DEFAULT: Theme = {
      anyone saves any theme setting at all — it stood at 4.5 while the
      stylesheet said 5, and now both say 5 again (2026-09-13, bar lowered). */
   layout: { padMin: 1.25, padMax: 4, navH: 5 },
-  motion: { projectFilter: 'fade', filterMs: FILTER_MS.default },
+  motion: { projectFilter: 'fade', filterMs: FILTER_MS.default, introMs: INTRO_MS.default },
 };
 
 /* A colour the site is willing to put in a stylesheet.
@@ -248,6 +265,9 @@ export function resolveTheme(raw: unknown): Theme {
         : d.motion!.projectFilter,
       filterMs: Math.round(
         rem(m.filterMs, d.motion!.filterMs, FILTER_MS.min, FILTER_MS.max)
+      ),
+      introMs: Math.round(
+        rem(m.introMs, d.motion!.introMs!, INTRO_MS.min, INTRO_MS.max)
       ),
     },
   };

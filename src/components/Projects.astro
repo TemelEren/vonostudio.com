@@ -42,6 +42,14 @@ const showFilters =
    until then the visitor sees a word rather than an identifier. */
 const allRaw = t('projects.all');
 const allLabel = allRaw === 'projects.all' ? (locale === 'tr' ? 'Hepsi' : 'All') : allRaw;
+/* Same guard, newer key (§5.231): the phone's "show more" button. */
+const moreRaw = t('projects.more');
+const moreLabel =
+  moreRaw === 'projects.more' || !moreRaw
+    ? locale === 'tr'
+      ? 'Daha fazla proje göster'
+      : 'Show more projects'
+    : moreRaw;
 
 /* Presentation, so it stays out of the URL: the grid is one section of the home
    page and a query string would reload it. Every tile stays in the DOM - hiding
@@ -92,7 +100,25 @@ const filterScript = [
   '  if (!root) return;',
   "  var buttons = root.querySelectorAll('.filter');",
   "  var tiles = root.querySelectorAll('.project');",
+  "  var grid = root.querySelector('.grid');",
+  "  var more = root.querySelector('.more');",
+  "  var moreCount = root.querySelector('.more-count');",
   '  var doc = document.documentElement;',
+  '  // ---- paging on a phone (editor, 2026-09-13) ----',
+  '  // One column of twelve 4:3 tiles is ~3600px of scrolling before About and',
+  '  // Contact. A phone starts with a few and asks for more. It is a SECOND',
+  '  // condition on the same "is this tile shown" question the filter already',
+  '  // answers, so the tiles it opens arrive with the same animation.',
+  "  var phone = window.matchMedia ? window.matchMedia('(max-width: 700px)') : null;",
+  "  var current = '';",
+  '  var limit = 0;',
+  '  function pageSize() {',
+  '    // Counted off the live grid, not a breakpoint copy: one column shows 4,',
+  '    // two columns 6 - both are about two screens of pictures.',
+  "    var cols = grid ? String(getComputedStyle(grid).gridTemplateColumns).split(' ').filter(Boolean).length : 1;",
+  '    return cols <= 1 ? 4 : 6;',
+  '  }',
+  '  function paged() { return !!(phone && phone.matches && more); }',
   '  // Someone who asked the system for less movement gets the old single frame.',
   '  var still =',
   "    doc.getAttribute('data-anim') === 'yok' ||",
@@ -112,11 +138,32 @@ const filterScript = [
   '  function fits(tile, key) {',
   "    return key === '' || (tile.getAttribute('data-cats') || '').split(' ').indexOf(key) >= 0;",
   '  }',
+  '  // WARNING: THE LIMIT COUNTS TILES THAT FIT THE FILTER, not tiles in the',
+  '  // document - otherwise a category whose projects sit late in the list',
+  '  // would open empty on a phone.',
+  '  function wanted(key) {',
+  '    var out = [];',
+  '    var rank = 0;',
+  '    var cap = paged();',
+  '    for (var i = 0; i < tiles.length; i++) {',
+  '      var ok = fits(tiles[i], key);',
+  '      out.push(ok && (!cap || rank < limit));',
+  '      if (ok) rank++;',
+  '    }',
+  '    return { list: out, total: rank };',
+  '  }',
+  '  function updateMore(total) {',
+  '    if (!more) return;',
+  '    var rest = paged() ? Math.max(0, total - limit) : 0;',
+  '    more.hidden = rest === 0;',
+  "    if (moreCount) moreCount.textContent = rest ? '(' + rest + ')' : '';",
+  '  }',
   '  // A click during a change cancels the one in flight: without this guard a',
   '  // stale timer would hide a tile the newer choice had just brought back.',
   '  var run = 0;',
   '  var timer = 0;',
-  '  function apply(key) {',
+  '  function apply(key, instant) {',
+  '    current = key;',
   '    for (var j = 0; j < buttons.length; j++) {',
   "      var on = (buttons[j].getAttribute('data-cat') || '') === key;",
   "      buttons[j].classList.toggle('is-on', on);",
@@ -129,8 +176,11 @@ const filterScript = [
   "      tiles[i].classList.remove('is-out', 'is-in');",
   "      tiles[i].style.removeProperty('--d');",
   '    }',
-  '    if (still) {',
-  '      for (i = 0; i < tiles.length; i++) tiles[i].hidden = !fits(tiles[i], key);',
+  '    var w = wanted(key);',
+  '    var want = w.list;',
+  '    updateMore(w.total);',
+  '    if (still || instant) {',
+  '      for (i = 0; i < tiles.length; i++) tiles[i].hidden = !want[i];',
   '      return;',
   '    }',
   '    var going = [];',
@@ -138,13 +188,13 @@ const filterScript = [
   '    var staying = [];',
   '    for (i = 0; i < tiles.length; i++) {',
   '      t = tiles[i];',
-  '      var want = fits(t, key);',
-  '      if (want && t.hidden) coming.push(t);',
-  '      else if (!want && !t.hidden) going.push(t);',
+  '      var on = want[i];',
+  '      if (on && t.hidden) coming.push(t);',
+  '      else if (!on && !t.hidden) going.push(t);',
   '      // Only a tile that is in both grids is moved, and only once it has',
   '      // been revealed - an unrevealed one is transparent and its transform',
   '      // belongs to the reveal, not to us.',
-  "      else if (want && !t.hidden && t.classList.contains('revealed')) staying.push(t);",
+  "      else if (on && !t.hidden && t.classList.contains('revealed')) staying.push(t);",
   '    }',
   '    if (!going.length && !coming.length) return;',
   '    // Read BEFORE anything moves. Any transform still in flight is included',
@@ -168,7 +218,7 @@ const filterScript = [
   '      var order = 0;',
   '      for (var m = 0; m < tiles.length; m++) {',
   '        var tile = tiles[m];',
-  '        if (!fits(tile, key)) continue;',
+  '        if (!want[m]) continue;',
   '        // The wave runs over what is VISIBLE, in document order, so it reads',
   '        // left to right whichever tiles happened to be hidden before.',
   '        if (coming.indexOf(tile) >= 0) {',
@@ -224,8 +274,31 @@ const filterScript = [
   '  }',
   "  root.addEventListener('click', function (e) {",
   "    var b = e.target && e.target.closest ? e.target.closest('.filter') : null;",
-  "    if (b && root.contains(b)) apply(b.getAttribute('data-cat') || '');",
+  "    if (b && root.contains(b)) {",
+  "      var k = b.getAttribute('data-cat') || '';",
+  '      // A new filter starts a new page: "show more" belongs to one list.',
+  '      if (k !== current) limit = pageSize();',
+  '      apply(k);',
+  '      return;',
+  '    }',
+  "    var m = e.target && e.target.closest ? e.target.closest('.more') : null;",
+  '    if (m && root.contains(m)) {',
+  '      limit += pageSize();',
+  '      apply(current);',
+  '    }',
   '  });',
+  '  // First paint on a phone: the extra tiles leave BEFORE anything is drawn',
+  '  // (this script runs right after the grid in the document), with no',
+  '  // animation - nothing has been shown yet that could move.',
+  '  limit = pageSize();',
+  '  apply(current, true);',
+  '  // Turning a phone sideways or resizing across the breakpoint re-pages',
+  '  // from the start instead of leaving a desktop grid half hidden.',
+  '  if (phone) {',
+  "    var onChange = function () { limit = pageSize(); apply(current, true); };",
+  "    if (phone.addEventListener) phone.addEventListener('change', onChange);",
+  '    else if (phone.addListener) phone.addListener(onChange);',
+  '  }',
   '  // `both` holds the end state, so the class has to come off once it is',
   '  // over, or the tile would keep an animated value it no longer needs.',
   "  root.addEventListener('animationend', function (e) {",
@@ -238,10 +311,10 @@ const filterScript = [
 <section class="section" id="projeler">
   <div class="container">
     <div class="section-head" data-reveal>
-      <h2 class="section-title">{t('projects.title')}</h2>
+      {t('projects.title') && <h2 class="section-title">{t('projects.title')}</h2>}
       {
         showFilters && (
-          <div class="filters" role="group" aria-label={t('projects.title')}>
+          <div class="filters" role="group" aria-label={t('projects.title') || (locale === 'tr' ? 'Projeler' : 'Projects')}>
             <button type="button" class="filter is-on" data-cat="" aria-pressed="true">
               {allLabel}
             </button>
@@ -273,6 +346,17 @@ const filterScript = [
         ))
       }
     </div>
+
+    {/* WARNING: HIDDEN IN THE MARKUP, SHOWN BY THE SCRIPT. Without JavaScript
+        every tile is already on the page and a button that does nothing would
+        be a lie; on a wide screen there is nothing to page. The script opens
+        it only on a phone and only while tiles are waiting. */}
+    <div class="more-wrap">
+      <button type="button" class="more" hidden>
+        <span>{moreLabel}</span>
+        <span class="more-count" aria-hidden="true"></span>
+      </button>
+    </div>
   </div>
 
   {/* WARNING: THE SCRIPT STAYS INSIDE THE SECTION. Printed after </section> it
@@ -280,7 +364,9 @@ const filterScript = [
       rule in styles/global.css (the tightened projects/references pair)
       silently stopped matching. Measured: the gap to the references did not
       move. */}
-  {showFilters && <script is:inline set:html={filterScript} />}
+  {/* Always printed now: the phone paging needs it even with no filter row.
+      With no buttons the filter half simply never fires. */}
+  <script is:inline set:html={filterScript} />
 </section>
 
 <style>
@@ -373,6 +459,55 @@ const filterScript = [
      display "block" on all 12. */
   .project[hidden] {
     display: none;
+  }
+
+  /* ---- "Show more projects" (phone only, §5.231) ----
+     WARNING: `display` HERE WOULD BEAT `hidden` TOO (see the rule above), so
+     the hidden state is spelled out. The target is 44px tall: it is a thumb's
+     button on a phone, and the label is small caps like the filter row. */
+  .more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: clamp(1.25rem, 5vw, 2rem);
+  }
+
+  .more {
+    appearance: none;
+    background: none;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    min-height: 44px;
+    padding: 0.7rem 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  .more[hidden] {
+    display: none;
+  }
+
+  .more:hover,
+  .more:focus-visible {
+    background: var(--ink);
+    color: var(--bg);
+  }
+
+  .more:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .more-count {
+    font-weight: 600;
+    opacity: 0.7;
   }
 
   /* ---- The filter's movement ----

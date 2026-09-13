@@ -15,7 +15,7 @@ const en = useTranslations('en');
 <Base
   locale={locale}
   title={`404 — ${t('notfound.title')} | Vono Studio`}
-  description={t('notfound.description')}
+  description={t('notfound.description') || t('notfound.title')}
   altUrl={localePath('en', '/')}
   noindex
 >
@@ -23,8 +23,8 @@ const en = useTranslations('en');
     <div class="container">
       <p class="code">404</p>
       <h1>{t('notfound.title')}</h1>
-      <p class="lead">{t('notfound.description')}</p>
-      <p class="lead en" lang="en">{en('notfound.description')}</p>
+      {t('notfound.description') && <p class="lead">{t('notfound.description')}</p>}
+      {en('notfound.description') && <p class="lead en" lang="en">{en('notfound.description')}</p>}
       <div class="links">
         <a href={localePath('tr', '/')}>{t('notfound.home')} →</a>
         <a href={localePath('en', '/')} lang="en">{en('notfound.home')} →</a>
