@@ -133,6 +133,9 @@ Restart=always
 frontend https-in
     bind :443 ssl crt /etc/haproxy/certs/
     acl host_vono hdr(host) -i vonostudio.com www.vonostudio.com
+    # www'siz adres asıldır: www'den geleni kalıcı (301) olarak yönlendir,
+    # yol ve sorgu dizesi korunur (§5.228).
+    http-request redirect prefix https://vonostudio.com code 301 if { hdr(host) -i www.vonostudio.com }
     use_backend vono if host_vono
 
 backend vono
@@ -155,6 +158,15 @@ olarak aramaya kapalıdır: `robots.txt` her şeyi engeller ve bütün sayfalar
 siteyle mükerrer içerik yarışına giremez. Kuralın tek kaynağı
 [`src/seo/site.ts`](src/seo/site.ts) içindeki `PRODUCTION_HOST`. Deneme
 sunucusu derlerken `SITE_URL`'e o sunucunun kendi adresini verin.
+
+**www:** asıl adres `https://vonostudio.com` (www'siz). `www.vonostudio.com`
+ve `http://` istekleri buna **301** ile yönlendirilmelidir; aksi hâlde aynı içerik
+iki adresten açılır. Site kanonik etiketi zaten www'siz adresi gösterir, ama
+yönlendirme vekilde yapılır — ya yukarıdaki HAProxy satırıyla ya da Cloudflare'de
+*Rules → Redirect Rules → "Redirect from WWW to root"* şablonuyla
+(`https://www.vonostudio.com/*` → `https://vonostudio.com/${1}`, 301, sorgu dizesi
+korunsun). Cloudflare önde olduğu için orada yapmak isteği sunucuya hiç
+ulaştırmaz; ikisinden biri yeter.
 
 Kontrol:
 

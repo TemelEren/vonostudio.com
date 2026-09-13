@@ -13,6 +13,18 @@ const t = useTranslations(locale);
 // The switcher shows the CURRENT language; clicking it goes to the other one.
 const langLabel = locale.toUpperCase();
 
+/* WARNING: THE HOME PAGE HAD NO <h1> (SEO check, 2026-09-13; measured: h1 0,
+   h2 6, h3 21). Its title IS the logo - there is no visible heading above the
+   projects to promote. So on the home page the mark is wrapped in the <h1> and
+   carries the studio's name as its text equivalent; every other page already
+   has its own h1 (project title, policy, 404) and keeps a plain wrapper, so
+   no page ends up with two. The name is visually hidden because the logo shows
+   it - a text alternative for an image, not hidden keyword text (§5.218). */
+const norm = (p: string) => p.replace(/\/+$/, '') || '/';
+const isHome = norm(Astro.url.pathname) === norm(localePath(locale, '/'));
+const BrandTag = isHome ? 'h1' : 'div';
+const brandName = 'Vono Studio';
+
 /* WARNING: THE MENU FOLLOWS THE PAGE, NOT A SECOND LIST. The editor can restack
    the home page (db/sectionOrder.ts); a menu written in its own fixed order
    would send someone to the fourth heading while its link sits second. Only the
@@ -67,9 +79,12 @@ const rightLinks = links.slice(half);
       ))}
     </div>
 
-    <a class="nav-brand" href={localePath(locale, '/')} aria-label="Vono Studio">
-      <Logo class="nav-logo" />
-    </a>
+    <BrandTag class="nav-brand-kap">
+      <a class="nav-brand" href={localePath(locale, '/')}>
+        <Logo class="nav-logo" />
+        <span class="sr-only">{brandName}</span>
+      </a>
+    </BrandTag>
 
     <div class="nav-side nav-side-right nav-links">
       {rightLinks.map((link) => (
@@ -123,6 +138,16 @@ const rightLinks = links.slice(half);
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 2rem;
+  }
+
+  /* The wrapper takes the grid slot (it is an <h1> on the home page): no
+     margin, no heading type - the logo inside is unchanged. */
+  .nav-brand-kap {
+    justify-self: center;
+    margin: 0;
+    font-size: inherit;
+    line-height: 0;
+    display: flex;
   }
 
   .nav-brand {
@@ -269,6 +294,7 @@ const rightLinks = links.slice(half);
       display: none;
     }
 
+    .nav-brand-kap,
     .nav-brand {
       justify-self: start;
     }

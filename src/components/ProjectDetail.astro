@@ -198,7 +198,7 @@ const media = resolveProjectMedia(project);
         screen reader is the only thing that reads it. */}
     {media.length > 0 && (
       <div class="full" id="full" role="dialog" aria-modal="true" hidden>
-        <img id="full-img" alt="" decoding="async" />
+        <img id="full-img" alt={title} decoding="async" />
         {/* One player for every film, like one <img> for every picture. It is
             NOT muted: opening a film is the deliberate act that asks for sound.
             `controls` because a film, unlike a picture, needs seek and volume. */}

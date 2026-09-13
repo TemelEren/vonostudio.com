@@ -21,7 +21,7 @@ import Footer from '../components/Footer.astro';
 import CookieConsent from '../components/CookieConsent.astro';
 import PreviewInspect from '../components/PreviewInspect.astro';
 import { loadSettings, loadTheme, themeCss } from '../db';
-import { withBase, type Locale } from '../i18n/ui';
+import { withBase, useTranslations, type Locale } from '../i18n/ui';
 import { graph } from '../seo/schema';
 import { isProductionSite } from '../seo/site';
 
@@ -80,6 +80,28 @@ const jsonLd = graph(site, locale, schema);
    with no `lang` either. It cost nothing to spot in a browser and would have
    been invisible in review. */
 const anim = theme.motion?.projectFilter ?? 'fade';
+
+/* ---- meta keywords (§5.228) ----
+   Google has ignored this tag for years, but SEO checkers still count it and
+   some other engines read it. Editable copy (meta.keywords), one list per
+   language, with the shipped list as the fallback for databases without a row.
+   WARNING: 260 CHARACTERS IS THE CEILING THE CHECKERS USE - longer reads as
+   keyword stuffing. An over-long value is cut back to the last whole comma-
+   separated term rather than mid-word; an empty value writes no tag at all. */
+const tUi = useTranslations(locale);
+const kwHam = (() => {
+  const v = tUi('meta.keywords');
+  if (v !== 'meta.keywords') return v;
+  return locale === 'tr'
+    ? 'mimarlık, iç mimarlık, mimari tasarım, iç mekân tasarımı, inşaat, kentsel tasarım, mimari proje, ofis tasarımı, konut projesi, kafe tasarımı, İstanbul, Sarıyer, Vono Studio'
+    : 'architecture, interior architecture, architectural design, interior design, construction, urban design, architectural project, office design, residential project, cafe design, Istanbul, Vono Studio';
+})().replace(/\s+/g, ' ').trim();
+const keywords = (() => {
+  if (kwHam.length <= 260) return kwHam;
+  const kesik = kwHam.slice(0, 260);
+  const son = kesik.lastIndexOf(',');
+  return (son > 0 ? kesik.slice(0, son) : kesik).trim();
+})();
 ---
 
 <!doctype html>
@@ -89,6 +111,10 @@ const anim = theme.motion?.projectFilter ?? 'fade';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {keywords && <meta name="keywords" content={keywords} />}
+    {/* `lang` on <html> is what search engines use; this duplicate is for the
+        checkers that only look for the meta tag (§5.228). */}
+    <meta http-equiv="content-language" content={locale} />
     {blockIndexing && <meta name="robots" content="noindex, follow" />}
     {
       !blockIndexing && (

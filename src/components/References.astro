@@ -26,7 +26,11 @@ const references = loadReferences();
         [0, 1, 2, 3].map((copy) => (
           <div class="group" aria-hidden={copy === 0 ? undefined : 'true'}>
             {references.map((ref) => (
-              <img src={ref.logo} alt={copy === 0 ? ref.name : ''} loading="lazy" decoding="async" />
+              /* WARNING: EVERY COPY CARRIES THE NAME (SEO check, 2026-09-13: 12
+                 logos "without alt"). The three repeat copies had alt="" as
+                 decoration; checkers count that as missing. The copies stay
+                 aria-hidden, so a screen reader still hears each name once. */
+              <img src={ref.logo} alt={ref.name} loading="lazy" decoding="async" />
             ))}
           </div>
         ))

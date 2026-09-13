@@ -345,6 +345,20 @@ main > section.section:first-of-type {
   --pt: calc(var(--nav-h) + clamp(2.5rem, 6vw, 5rem));
 }
 
+/* Text that stands in for something visible (the logo's name in the home
+   page h1). Not for hiding keyword copy - see §5.218. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Keyboard users get a way past the fixed nav straight into the content. */
 .skip-link {
   position: fixed;
