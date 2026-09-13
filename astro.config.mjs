@@ -1,10 +1,11 @@
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
 
-// The domain the site is served on. Preview deployments keep the default; the
-// live one sets SITE_URL=https://vonostudio.com. Anything other than the
-// production host is served noindex with a closed robots.txt — see src/seo/site.ts.
-const site = process.env.SITE_URL ?? 'https://next.vonostudio.com';
+// The domain the site is served on - vonostudio.com. The old preview domain
+// (next.vonostudio.com) no longer exists (2026-09-13), so the default IS the live
+// site. A staging build must set SITE_URL to its own address: anything other than
+// the production host is served noindex with a closed robots.txt — see src/seo/site.ts.
+const site = process.env.SITE_URL ?? 'https://vonostudio.com';
 
 // Rendered on demand: every page reads its content from the SQLite database at
 // request time, so edits are live without a rebuild. There is no `base` — the

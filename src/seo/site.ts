@@ -1,13 +1,13 @@
 /**
  * Which host counts as the real site.
  *
- * Anything else — next.vonostudio.com, a staging box, a local preview — is kept
+ * Anything else — a staging box, a local preview on another domain — is kept
  * out of search results automatically: `robots.txt` disallows everything and
- * every page carries `noindex`. That way the preview domain can never be
+ * every page carries `noindex`. That way a copy of the site can never be
  * indexed and compete with the real one for the same content.
  *
- * Going live is a one-line change: point SITE_URL at https://vonostudio.com
- * (or edit the default in astro.config.mjs) and rebuild.
+ * The live site is the default (SITE_URL in astro.config.mjs); the former
+ * preview domain next.vonostudio.com no longer exists.
  */
 export const PRODUCTION_HOST = 'vonostudio.com';
 

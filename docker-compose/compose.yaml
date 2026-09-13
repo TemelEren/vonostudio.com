@@ -11,7 +11,7 @@ services:
       dockerfile: docker-compose/Dockerfile
       args:
         # Derleme zamanında gömülür — değiştirince --build ile yeniden kurun.
-        SITE_URL: ${SITE_URL:-https://next.vonostudio.com}
+        SITE_URL: ${SITE_URL:-https://vonostudio.com}
     image: vonostudio:${TAG:-latest}
     container_name: vonostudio-web
     restart: unless-stopped

@@ -31,7 +31,7 @@ npm run dev         # http://localhost:4321
 | Değişken | Varsayılan | Ne işe yarar |
 |---|---|---|
 | `CONTENT_DB` | `content.db` | İçerik veritabanının yolu |
-| `SITE_URL` | `https://next.vonostudio.com` | **Derleme zamanında** okunur; canonical adresler, hreflang, site haritası ve paylaşım kartları bundan türetilir |
+| `SITE_URL` | `https://vonostudio.com` | **Derleme zamanında** okunur; canonical adresler, hreflang, site haritası ve paylaşım kartları bundan türetilir |
 | `HOST` / `PORT` | `0.0.0.0` / `4321` | Sunucunun dinlediği adres (Docker imajında `8081`) |
 
 `SITE_URL` çalışma anında değil, `npm run build` sırasında gömülür — alan adı
@@ -110,7 +110,7 @@ anında okunur.
 ## Sunucuda çalıştırma — Docker'sız
 
 ```bash
-SITE_URL=https://next.vonostudio.com npm run build
+SITE_URL=https://vonostudio.com npm run build
 CONTENT_DB=/var/lib/vono/content.db PORT=8081 npm start
 ```
 
@@ -132,7 +132,7 @@ Restart=always
 ```haproxy
 frontend https-in
     bind :443 ssl crt /etc/haproxy/certs/
-    acl host_vono hdr(host) -i next.vonostudio.com
+    acl host_vono hdr(host) -i vonostudio.com www.vonostudio.com
     use_backend vono if host_vono
 
 backend vono
@@ -146,22 +146,22 @@ bağımlı değildir; `X-Forwarded-*` sadece kayıtlar için gerekir.
 
 ## Arama motorları
 
-`vonostudio.com` **dışındaki** her alan adı otomatik olarak aramaya kapalıdır:
-`robots.txt` her şeyi engeller ve bütün sayfalar `noindex` etiketiyle çıkar.
-Böylece `next.vonostudio.com` Google'a düşüp ileride asıl siteyle mükerrer
-içerik yarışına giremez. Kuralın tek kaynağı
-[`src/seo/site.ts`](src/seo/site.ts) içindeki `PRODUCTION_HOST`.
+Site `vonostudio.com` adresinde yayındadır ve `SITE_URL`'in varsayılanı budur.
+Eski önizleme alanı `next.vonostudio.com` artık yoktur (2026-09-13).
 
-Canlıya geçerken:
+`vonostudio.com` **dışındaki** her alan adı (ör. bir deneme sunucusu) otomatik
+olarak aramaya kapalıdır: `robots.txt` her şeyi engeller ve bütün sayfalar
+`noindex` etiketiyle çıkar. Böylece sitenin bir kopyası Google'a düşüp asıl
+siteyle mükerrer içerik yarışına giremez. Kuralın tek kaynağı
+[`src/seo/site.ts`](src/seo/site.ts) içindeki `PRODUCTION_HOST`. Deneme
+sunucusu derlerken `SITE_URL`'e o sunucunun kendi adresini verin.
 
-1. `SITE_URL=https://vonostudio.com npm run build` ile derle.
-2. `/robots.txt` adresinin `Allow: /` döndüğünü ve sayfalarda `noindex`
-   kalmadığını doğrula.
-3. `next.vonostudio.com` adresini `vonostudio.com` adresine kalıcı (301)
-   yönlendir.
-4. [Google Search Console](https://search.google.com/search-console)'a
-   `vonostudio.com` adresini ekleyip `https://vonostudio.com/sitemap.xml`
-   site haritasını gönder.
+Kontrol:
+
+1. `/robots.txt` adresinin `Allow: /` döndüğünü ve sayfalarda `noindex`
+   olmadığını doğrula.
+2. [Google Search Console](https://search.google.com/search-console)'da
+   `https://vonostudio.com/sitemap.xml` site haritasının gönderildiğini doğrula.
 
 ## Klasörler
 

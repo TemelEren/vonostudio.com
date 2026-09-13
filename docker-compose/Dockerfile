@@ -15,7 +15,7 @@ COPY . .
 
 # Canonical URLs, hreflang, the sitemap and the share cards are all derived from
 # this, and Astro bakes it in at build time — a domain change means a rebuild.
-ARG SITE_URL=https://next.vonostudio.com
+ARG SITE_URL=https://vonostudio.com
 ENV SITE_URL=${SITE_URL}
 RUN npm run build
 
