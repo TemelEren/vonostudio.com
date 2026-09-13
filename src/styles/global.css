@@ -16,12 +16,16 @@
      this is now the reference's own figure, minus the 6px that the theme's
      ceiling costs.
 
-     WARNING: 8rem IS THE THEME'S MAXIMUM (db/theme.ts clamps navH to 3-8, and
-     the panel ships the same range). Going to 8.375rem would put the default
-     OUTSIDE the range an editor can set, so the first time anyone touched any
-     layout field the bar would silently jump back down to 8. Raise both
-     clamps first if the extra 6px is ever wanted. */
-  --nav-h: 8rem;
+     WARNING: AND THEN IT WAS TOO TALL (editor, 2026-09-13: "the white area of
+     the top bar is far too high, on mobile and on the web"). 128px of bar plus
+     the first section's own gap put the first photograph ~208px down the page
+     at 1440 and cost a phone a fifth of its screen. The bar is 80px on a wide
+     screen and 64px on a phone (below); do not go back up without measuring
+     the space above the first picture.
+
+     WARNING: THE THEME CLAMPS navH TO 3-8rem and the panel ships the same range;
+     the default must stay inside it and equal db/theme.ts. */
+  --nav-h: 5rem;
 
   /* ---- Display type scale ----
      WARNING: THESE ARE ONE LADDER, NOT SIX INDEPENDENT NUMBERS. Shrinking a
@@ -305,7 +309,7 @@ button {
      60%. THE CEILING IS HALF THE BAR (64px at --nav-h: 8rem) - a mark
      taller than that has nowhere to breathe and the bar starts to look like
      a masthead. Re-measure the pair together if either changes. */
-  height: 2.4rem;
+  height: 2.4rem; /* 38px: under half of the 80px bar */
   width: auto;
   transition: opacity 0.15s ease;
   /* Glyphs shift outside the viewBox while following the cursor —
@@ -341,8 +345,25 @@ button {
    2026-09-13): the first section kept the ordinary 144px padding, 16px of
    air under a 128px bar at 1440 and the "PROJELER" heading cut off by the bar
    at 1024 (102px). Only <section> counts for :first-of-type. */
+/* The gap under the bar shrank with the bar (2026-09-13): 80px of air above
+   the first heading at 1440 was part of the "too much white" report. */
 main > section.section:first-of-type {
-  --pt: calc(var(--nav-h) + clamp(2.5rem, 6vw, 5rem));
+  --pt: calc(var(--nav-h) + clamp(1.5rem, 3.5vw, 3rem));
+}
+
+/* ---- A phone gets a shorter bar ----
+   WARNING: :root:root:root, THREE TIMES ON PURPOSE. The theme writes --nav-h in a
+   :root:root block (db/theme.ts, §5.192), which would beat a plain :root here;
+   one level more keeps the phone bar short whatever the desktop value is. The
+   logo comes down with it so it stays under half the bar (64px -> 30px mark). */
+@media (max-width: 700px) {
+  :root:root:root {
+    --nav-h: 4rem;
+  }
+
+  .nav-logo {
+    height: 1.9rem;
+  }
 }
 
 /* Text that stands in for something visible (the logo's name in the home

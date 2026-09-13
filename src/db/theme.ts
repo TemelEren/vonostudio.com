@@ -114,8 +114,8 @@ export const THEME_DEFAULT: Theme = {
   /* WARNING: navH MUST MATCH global.css. This value is what a theme row lands
      on, so a drift here means the bar silently changes height the first time
      anyone saves any theme setting at all — it stood at 4.5 while the
-     stylesheet said 5, and now both say 5.5. */
-  layout: { padMin: 1.25, padMax: 4, navH: 8 },
+     stylesheet said 5, and now both say 5 again (2026-09-13, bar lowered). */
+  layout: { padMin: 1.25, padMax: 4, navH: 5 },
   motion: { projectFilter: 'fade', filterMs: FILTER_MS.default },
 };
 

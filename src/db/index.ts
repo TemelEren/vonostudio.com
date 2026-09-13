@@ -202,8 +202,13 @@ export function loadProject(slug: string): Project | undefined {
  */
 export const MEDIA_DIR = process.env.CONTENT_MEDIA_DIR || join(dirname(DB_PATH), 'content-medya');
 
-/** The only names ever joined to {@link MEDIA_DIR}. */
-const MEDIA_NAME = /^[0-9a-f]{64}\.(mp4|webm)$/;
+/** The only names ever joined to {@link MEDIA_DIR}.
+ *
+ * WARNING: EVERY UPLOADED TYPE, NOT ONLY FILMS (panel §5.229). Pictures and fonts
+ * are written to the folder too now; a pattern that still said mp4|webm would
+ * answer every new photograph with a 404. The list is the panel's AssetMime
+ * keys (SiteContentService.cs) - a test compares the two. */
+const MEDIA_NAME = /^[0-9a-f]{64}\.(avif|gif|ico|jpeg|jpg|png|svg|webp|pdf|txt|woff2|woff|ttf|otf|mp4|webm)$/;
 
 /** What a stored file is, without reading the file. */
 export interface AssetMeta {
