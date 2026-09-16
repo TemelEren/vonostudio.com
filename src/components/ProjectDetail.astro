@@ -519,7 +519,7 @@ const seoKeywords = String(project.seoKeywords?.[locale] ?? '').replace(/\s+/g, 
   .kicker {
     margin-top: 0.7rem;
     font-family: var(--font-display);
-    font-size: clamp(0.8rem, 0.95vw, 0.92rem);
+    font-size: var(--t-kicker);
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -824,7 +824,7 @@ const seoKeywords = String(project.seoKeywords?.[locale] ?? '').replace(/\s+/g, 
     max-width: 44rem;
     display: grid;
     gap: 1.5rem;
-    font-size: 1.05rem;
+    font-size: var(--t-project-body);
   }
 
   /* Three columns on a wide screen (editor, 2026-09-13 - the reference ran 4,

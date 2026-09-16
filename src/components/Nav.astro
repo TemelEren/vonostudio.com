@@ -181,9 +181,11 @@ const rightLinks = links.slice(half);
     font-size: var(--t-nav);
     /* 700 and NO tracking, both measured off the reference (14px/700/normal).
        At this size weight is what separates a menu from a caption; tracking
-       was giving back in lightness what the size bought. */
-    font-weight: 700;
-    text-transform: uppercase;
+       was giving back in lightness what the size bought. The three are tokens
+       the ERP can change (§5.243); the defaults are these same values. */
+    font-weight: var(--nav-weight);
+    text-transform: var(--nav-case);
+    letter-spacing: var(--nav-tracking);
     /* HOVER FADES, IT DOES NOT UNDERLINE (editor's request, 2026-09-12). The
        rule it replaced drew a 1px line that wiped in from the right, which is
        a second graphic element in a bar whose whole job is to stay quiet.
@@ -264,8 +266,8 @@ const rightLinks = links.slice(half);
     gap: 0.6rem;
     font-family: var(--font-display);
     font-size: var(--t-nav);
-    font-weight: 700;
-    text-transform: uppercase;
+    font-weight: var(--nav-weight);
+    text-transform: var(--nav-case);
   }
 
   .burger-icon {

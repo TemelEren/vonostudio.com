@@ -115,7 +115,7 @@ const lead = about.intro[locale][0] ?? '';
      would start visibly below the photo's top edge. The negative margin takes
      that half-leading back: (1.5 - 1) / 2 = 0.25em. */
   .lead {
-    font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+    font-size: var(--t-lead);
     line-height: 1.5;
     margin-top: -0.25em;
   }
@@ -138,7 +138,7 @@ const lead = about.intro[locale][0] ?? '';
   }
 
   .stats dd {
-    font-size: 0.78rem;
+    font-size: var(--t-caption);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);

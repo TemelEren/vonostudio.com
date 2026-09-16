@@ -49,6 +49,23 @@
   --t-display: clamp(1.15rem, 1.85vw, 1.65rem);
   --t-item: clamp(1.05rem, 1.55vw, 1.35rem);
   --t-item-sm: clamp(1rem, 1.35vw, 1.2rem);
+  /* ---- Text roles that used to be written inline (§5.239) ----
+     WARNING: EVERY SIZE AN EDITOR CAN CHANGE LIVES HERE AS A TOKEN, and the
+     panel resizes it through the theme (db/theme.ts → TYPE_SCALE). A size left
+     inline in a component is a size the ERP cannot reach. The values are the
+     ones the components carried before, byte for byte: an installation with no
+     theme row renders exactly as it did. */
+  --t-lead: clamp(1.1rem, 1.7vw, 1.4rem);
+  --t-service-text: clamp(0.98rem, 1.2vw, 1.15rem);
+  --t-kicker: clamp(0.8rem, 0.95vw, 0.92rem);
+  --t-card-title: clamp(0.76rem, 0.95vw, 0.9rem);
+  --t-card-meta: clamp(0.66rem, 0.78vw, 0.74rem);
+  --t-filter: clamp(0.7rem, 0.82vw, 0.78rem);
+  --t-body: 1rem;
+  --t-project-body: 1.05rem;
+  --t-note: 0.95rem;
+  --t-small: 0.8rem;
+  --t-caption: 0.78rem;
   /* The bar reads as chrome, not as a whisper: 0.78rem/500 measured 12.48px
      against the reference's 14px/700, and tracking makes small type feel
      lighter still.
@@ -79,6 +96,23 @@
      gets, so the transition works before anyone has opened the panel. WHICH
      animation runs is `<html data-anim>`, not a number. */
   --filter-ms: 420ms;
+
+  /* ---- Letterforms and spacing the ERP can change (§5.243) ----
+     WARNING: EACH VALUE EQUALS db/theme.ts → THEME_DEFAULT, and the theme only
+     writes the ones an editor moved. An installation with no theme row renders
+     exactly as it did before these became tokens. */
+  --h-weight: 700;
+  --h-case: uppercase;
+  --h-tracking: 0em;
+  --h-line: 1.1;
+  --nav-weight: 700;
+  --nav-case: uppercase;
+  --nav-tracking: 0em;
+  --body-line: 1.65;
+  --logo-h: 2.4rem;
+  --logo-h-mobile: 1.9rem;
+  --sec-min: 5rem;
+  --sec-max: 9rem;
 }
 
 * {
@@ -101,8 +135,8 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 1rem;
-  line-height: 1.65;
+  font-size: var(--t-body);
+  line-height: var(--body-line);
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
 }
@@ -132,10 +166,10 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font-weight: var(--h-weight);
+  line-height: var(--h-line);
+  letter-spacing: var(--h-tracking);
+  text-transform: var(--h-case);
 }
 
 a {
@@ -177,8 +211,8 @@ button {
   /* The top padding lives in a variable because the anchor offset below is
      computed from it. Every rule that changes a section's top padding sets
      --pt, not padding-top - otherwise the heading lands under the bar again. */
-  --pt: clamp(5rem, 10vw, 9rem);
-  padding-block: var(--pt) clamp(5rem, 10vw, 9rem);
+  --pt: clamp(var(--sec-min), 10vw, var(--sec-max));
+  padding-block: var(--pt) clamp(var(--sec-min), 10vw, var(--sec-max));
   /* WARNING: A JUMP LANDS THE HEADING UNDER THE BAR, NOT THE SECTION'S EDGE
      (editor, 2026-09-13: "pressing Services leaves its heading hidden under the
      menu bar"). Measured: a section after the references has 56px of top
@@ -309,7 +343,7 @@ button {
      60%. THE CEILING IS HALF THE BAR (64px at --nav-h: 8rem) - a mark
      taller than that has nowhere to breathe and the bar starts to look like
      a masthead. Re-measure the pair together if either changes. */
-  height: 2.4rem; /* 38px: under half of the 80px bar */
+  height: var(--logo-h); /* 2.4rem = 38px: under half of the 80px bar */
   width: auto;
   transition: opacity 0.15s ease;
   /* Glyphs shift outside the viewBox while following the cursor —
@@ -362,7 +396,7 @@ main > section.section:first-of-type {
   }
 
   .nav-logo {
-    height: 1.9rem;
+    height: var(--logo-h-mobile);
   }
 }
 

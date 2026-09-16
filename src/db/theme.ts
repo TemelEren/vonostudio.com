@@ -118,6 +118,99 @@ export const FILTER_MS = { min: 120, max: 1200, default: 420 };
  */
 export const INTRO_MS = { min: 1000, max: 8000, default: 2800 };
 
+/**
+ * Every text size an editor may change from the ERP (§5.239), and the CSS
+ * variable it drives. Values are REM, copied from global.css: `min` + `vw` +
+ * `max` is a fluid role (clamp), `max` alone is a fixed one.
+ *
+ * WARNING: THE THEME STORES PIXELS, THE STYLESHEET GETS REM. An editor thinks
+ * "44px title"; writing rem keeps the page honouring a visitor's browser zoom.
+ *
+ * WARNING: AN UNTOUCHED ROLE IS NOT WRITTEN AT ALL. themeCss only emits a role
+ * whose size differs from the default, so global.css keeps its exact clamp -
+ * a theme row that merely changed a colour cannot shift a single glyph.
+ *
+ * WARNING: THE CURVE SCALES WITH THE CEILING. A resized fluid role keeps the
+ * original `vw` multiplied by new max / old max, so it still reaches its ceiling
+ * at the same screen width it did before instead of plateauing early or late.
+ *
+ * WARNING: THE PANEL SHIPS ITS OWN COPY (data/siteTema.js → SITE_YAZILARI) and
+ * a test compares the two. A role the panel does not know is simply not
+ * offered; one this site does not know is ignored.
+ */
+export const TYPE_SCALE: Record<string, { css: string; max: number; min?: number; vw?: number }> = {
+  hero: { css: '--t-hero', min: 1.7, vw: 3.1, max: 2.75 },
+  section: { css: '--t-section', min: 1.45, vw: 2.3, max: 2.05 },
+  display: { css: '--t-display', min: 1.15, vw: 1.85, max: 1.65 },
+  item: { css: '--t-item', min: 1.05, vw: 1.55, max: 1.35 },
+  itemSm: { css: '--t-item-sm', min: 1, vw: 1.35, max: 1.2 },
+  lead: { css: '--t-lead', min: 1.1, vw: 1.7, max: 1.4 },
+  serviceText: { css: '--t-service-text', min: 0.98, vw: 1.2, max: 1.15 },
+  kicker: { css: '--t-kicker', min: 0.8, vw: 0.95, max: 0.92 },
+  cardTitle: { css: '--t-card-title', min: 0.76, vw: 0.95, max: 0.9 },
+  cardMeta: { css: '--t-card-meta', min: 0.66, vw: 0.78, max: 0.74 },
+  filter: { css: '--t-filter', min: 0.7, vw: 0.82, max: 0.78 },
+  body: { css: '--t-body', max: 1 },
+  projectBody: { css: '--t-project-body', max: 1.05 },
+  note: { css: '--t-note', max: 0.95 },
+  nav: { css: '--t-nav', max: 0.875 },
+  small: { css: '--t-small', max: 0.8 },
+  caption: { css: '--t-caption', max: 0.78 },
+  label: { css: '--t-label', max: 0.75 },
+};
+
+/** Pixel bounds a text size may take: below 8px nothing is readable, above
+ *  120px a word no longer fits a phone. */
+export const TYPE_PX = { min: 8, max: 120 };
+
+/**
+ * Where "phone" ends (§5.243). The same breakpoint the stylesheet already uses
+ * for the short phone bar and the smaller logo (global.css), so a phone size an
+ * editor sets switches over exactly where the rest of the phone layout does.
+ */
+export const MOBILE_MAX_PX = 700;
+
+/**
+ * Letter case an editor may choose for headings and the menu (§5.243).
+ * WARNING: A KEY, NEVER CSS — the value is mapped here, an unknown key falls
+ * back to the default instead of reaching the stylesheet.
+ */
+export const TEXT_CASES: Record<string, string> = {
+  upper: 'uppercase',
+  none: 'none',
+  capitalize: 'capitalize',
+};
+
+/** Bounds for the letterform settings (§5.243). Weights snap to hundreds -
+ *  variable fonts honour every step, a static upload falls to its nearest. */
+export const TEXT_BOUNDS = {
+  weight: { min: 300, max: 900 },
+  tracking: { min: -0.05, max: 0.3 },
+  headingLine: { min: 0.8, max: 1.8 },
+  bodyLine: { min: 1.1, max: 2.4 },
+};
+
+/** Bounds for the layout lengths added in §5.243, in rem. */
+export const LAYOUT_BOUNDS = {
+  logoH: { min: 1.2, max: 4 },
+  logoHMobile: { min: 1, max: 3.2 },
+  secMin: { min: 1.5, max: 10 },
+  secMax: { min: 2, max: 16 },
+};
+
+const REM_PX = 16;
+const px2 = (n: number): number => Math.round(n * 100) / 100;
+
+function typeDefaults(): NonNullable<Theme['type']> {
+  const out: NonNullable<Theme['type']> = {};
+  for (const [k, s] of Object.entries(TYPE_SCALE)) {
+    out[k] = s.min === undefined
+      ? { max: px2(s.max * REM_PX) }
+      : { min: px2(s.min * REM_PX), max: px2(s.max * REM_PX) };
+  }
+  return out;
+}
+
 /** The look the site had before any of this was editable. */
 export const THEME_DEFAULT: Theme = {
   colors: {
@@ -127,13 +220,20 @@ export const THEME_DEFAULT: Theme = {
     line: '#e7e7e3',
     soft: '#f4f4f1',
   },
-  fonts: { display: 'space-grotesk', body: 'inter' },
+  fonts: { display: 'space-grotesk', body: 'inter', displayMobile: '', bodyMobile: '' },
   /* WARNING: navH MUST MATCH global.css. This value is what a theme row lands
      on, so a drift here means the bar silently changes height the first time
      anyone saves any theme setting at all — it stood at 4.5 while the
-     stylesheet said 5, and now both say 5 again (2026-09-13, bar lowered). */
-  layout: { padMin: 1.25, padMax: 4, navH: 5 },
+     stylesheet said 5, and now both say 5 again (2026-09-13, bar lowered).
+     The same goes for every value below: each equals its global.css token. */
+  layout: { padMin: 1.25, padMax: 4, navH: 5, logoH: 2.4, logoHMobile: 1.9, secMin: 5, secMax: 9 },
+  text: {
+    headingWeight: 700, headingCase: 'upper', headingTracking: 0, headingLine: 1.1,
+    navWeight: 700, navCase: 'upper', navTracking: 0,
+    bodyLine: 1.65,
+  },
   motion: { projectFilter: 'fade', filterMs: FILTER_MS.default, introMs: INTRO_MS.default },
+  type: typeDefaults(),
 };
 
 /* A colour the site is willing to put in a stylesheet.
@@ -219,6 +319,14 @@ const rem = (value: unknown, fallback: number, min: number, max: number): number
   return Math.min(Math.max(n, min), max);
 };
 
+/* A font weight: a number snapped to hundreds inside the allowed range. */
+const weight = (value: unknown, fallback: number): number =>
+  Math.round(rem(value, fallback, TEXT_BOUNDS.weight.min, TEXT_BOUNDS.weight.max) / 100) * 100;
+
+/* A letter case key from TEXT_CASES, or the default. */
+const textCase = (value: unknown, fallback: string): string =>
+  typeof value === 'string' && Object.hasOwn(TEXT_CASES, value) ? value : fallback;
+
 /* A key the theme may select: a built-in family or one the editor uploaded. */
 const fontKey = (value: unknown, fallback: string, yuklenen: CustomFont[]): string => {
   if (typeof value !== 'string') return fallback;
@@ -239,7 +347,9 @@ export function resolveTheme(raw: unknown): Theme {
   const f = (t.fonts ?? {}) as Partial<Theme['fonts']>;
   const l = (t.layout ?? {}) as Partial<Theme['layout']>;
   const m = (t.motion ?? {}) as Partial<NonNullable<Theme['motion']>>;
+  const x = (t.text ?? {}) as Partial<NonNullable<Theme['text']>>;
   const yuklenen = customFonts(t.customFonts);
+  const ty = (t.type && typeof t.type === 'object' ? t.type : {}) as Record<string, unknown>;
   const d = THEME_DEFAULT;
   return {
     colors: {
@@ -252,12 +362,31 @@ export function resolveTheme(raw: unknown): Theme {
     fonts: {
       display: fontKey(f.display, d.fonts.display, yuklenen),
       body: fontKey(f.body, d.fonts.body, yuklenen),
+      /* Empty means "same as the web family": an unknown key is dropped to
+         empty rather than to the default, so a stale phone choice never
+         overrides the web family the editor can see (§5.243). */
+      displayMobile: fontKey(f.displayMobile, '', yuklenen),
+      bodyMobile: fontKey(f.bodyMobile, '', yuklenen),
     },
     customFonts: yuklenen,
     layout: {
       padMin: rem(l.padMin, d.layout.padMin, 0.5, 4),
       padMax: rem(l.padMax, d.layout.padMax, 1, 10),
       navH: rem(l.navH, d.layout.navH, 3, 8),
+      logoH: rem(l.logoH, d.layout.logoH!, LAYOUT_BOUNDS.logoH.min, LAYOUT_BOUNDS.logoH.max),
+      logoHMobile: rem(l.logoHMobile, d.layout.logoHMobile!, LAYOUT_BOUNDS.logoHMobile.min, LAYOUT_BOUNDS.logoHMobile.max),
+      secMin: rem(l.secMin, d.layout.secMin!, LAYOUT_BOUNDS.secMin.min, LAYOUT_BOUNDS.secMin.max),
+      secMax: rem(l.secMax, d.layout.secMax!, LAYOUT_BOUNDS.secMax.min, LAYOUT_BOUNDS.secMax.max),
+    },
+    text: {
+      headingWeight: weight(x.headingWeight, d.text!.headingWeight),
+      headingCase: textCase(x.headingCase, d.text!.headingCase),
+      headingTracking: px2(rem(x.headingTracking, d.text!.headingTracking, TEXT_BOUNDS.tracking.min, TEXT_BOUNDS.tracking.max)),
+      headingLine: px2(rem(x.headingLine, d.text!.headingLine, TEXT_BOUNDS.headingLine.min, TEXT_BOUNDS.headingLine.max)),
+      navWeight: weight(x.navWeight, d.text!.navWeight),
+      navCase: textCase(x.navCase, d.text!.navCase),
+      navTracking: px2(rem(x.navTracking, d.text!.navTracking, TEXT_BOUNDS.tracking.min, TEXT_BOUNDS.tracking.max)),
+      bodyLine: px2(rem(x.bodyLine, d.text!.bodyLine, TEXT_BOUNDS.bodyLine.min, TEXT_BOUNDS.bodyLine.max)),
     },
     motion: {
       projectFilter: Object.hasOwn(FILTER_ANIMS, String(m.projectFilter))
@@ -270,7 +399,82 @@ export function resolveTheme(raw: unknown): Theme {
         rem(m.introMs, d.motion!.introMs!, INTRO_MS.min, INTRO_MS.max)
       ),
     },
+    /* Numbers only, clamped: nothing an editor types can reach the stylesheet
+       as text. A role missing from the row keeps its default on its own. */
+    type: Object.fromEntries(
+      Object.entries(d.type!).map(([k, def]) => {
+        const raw = (ty[k] && typeof ty[k] === 'object' ? ty[k] : {}) as { min?: unknown; max?: unknown };
+        const max = px2(rem(raw.max, def.max, TYPE_PX.min, TYPE_PX.max));
+        if (def.min === undefined) {
+          /* A fixed role has no phone size of its own until the editor gives it
+             one (§5.243); a value that is not a number is simply not one. */
+          const n = typeof raw.min === 'number' ? raw.min : Number.parseFloat(String(raw.min ?? ''));
+          return Number.isFinite(n)
+            ? [k, { min: px2(Math.min(Math.max(n, TYPE_PX.min), TYPE_PX.max)), max }]
+            : [k, { max }];
+        }
+        return [k, { min: px2(rem(raw.min, def.min, TYPE_PX.min, TYPE_PX.max)), max }];
+      })
+    ),
   };
+}
+
+/* Only the roles that moved away from global.css.
+
+   WARNING: TWO OUTPUTS, WEB AND PHONE (§5.243). `web` goes in the main :root
+   block; `mobile` in a (max-width: MOBILE_MAX_PX) block after it, so the phone
+   size an editor typed is the phone size a visitor gets - exactly, not
+   "wherever the clamp happens to land at 390px". A fixed role only writes a
+   phone line once it has a phone size. */
+function typeCss(t: Theme): { web: string; mobile: string } {
+  const d = THEME_DEFAULT.type!;
+  const r = (px: number) => `${Math.round((px / REM_PX) * 10000) / 10000}rem`;
+  const out: string[] = [];
+  const mob: string[] = [];
+  for (const [k, s] of Object.entries(TYPE_SCALE)) {
+    const v = t.type?.[k];
+    const def = d[k];
+    if (!v || !def) continue;
+    if (v.max === def.max && v.min === def.min) continue;
+    if (v.min !== undefined) mob.push(`${s.css}:${r(v.min)};`);
+    if (s.min === undefined || v.min === undefined || def.min === undefined) {
+      out.push(`${s.css}:${r(v.max)};`);
+      continue;
+    }
+    /* WARNING: A PHONE SIZE ABOVE THE WIDE ONE IS NOT HONOURED AS IS — clamp()
+       with min > max always resolves to min and the role would stop shrinking
+       at all. The smaller of the two is the floor; the panel says so. */
+    const lo = Math.min(v.min, v.max);
+    const vw = Math.round(s.vw! * (v.max / def.max) * 1000) / 1000;
+    out.push(`${s.css}:clamp(${r(lo)}, ${vw}vw, ${r(v.max)});`);
+  }
+  return { web: out.join(''), mobile: mob.join('') };
+}
+
+/* Letterform and layout tokens, ONLY where they moved away from the default -
+   global.css keeps its own values untouched (§5.243). Numbers and catalogue
+   keys only: nothing an editor types reaches the stylesheet as text. */
+function styleCss(t: Theme): string {
+  const d = THEME_DEFAULT;
+  const x = t.text!, dx = d.text!;
+  const l = t.layout, dl = d.layout;
+  const out: string[] = [];
+  const add = (cond: boolean, line: string) => { if (cond) out.push(line); };
+  add(x.headingWeight !== dx.headingWeight, `--h-weight:${x.headingWeight};`);
+  add(x.headingCase !== dx.headingCase, `--h-case:${TEXT_CASES[x.headingCase]};`);
+  add(x.headingTracking !== dx.headingTracking, `--h-tracking:${x.headingTracking}em;`);
+  add(x.headingLine !== dx.headingLine, `--h-line:${x.headingLine};`);
+  add(x.navWeight !== dx.navWeight, `--nav-weight:${x.navWeight};`);
+  add(x.navCase !== dx.navCase, `--nav-case:${TEXT_CASES[x.navCase]};`);
+  add(x.navTracking !== dx.navTracking, `--nav-tracking:${x.navTracking}em;`);
+  add(x.bodyLine !== dx.bodyLine, `--body-line:${x.bodyLine};`);
+  add(l.logoH !== dl.logoH, `--logo-h:${l.logoH}rem;`);
+  add(l.logoHMobile !== dl.logoHMobile, `--logo-h-mobile:${l.logoHMobile}rem;`);
+  add(l.secMin !== dl.secMin, `--sec-min:${l.secMin}rem;`);
+  /* A ceiling below the floor would freeze the spacing at the floor: the larger
+     of the two is the ceiling, and the panel says so. */
+  add(l.secMax !== dl.secMax || l.secMin! > l.secMax!, `--sec-max:${Math.max(l.secMax!, l.secMin!)}rem;`);
+  return out.join('');
 }
 
 /**
@@ -294,6 +498,15 @@ export function themeCss(theme: Theme): string {
   const t = resolveTheme(theme);
   const pad = `clamp(${t.layout.padMin}rem, 4vw, ${Math.max(t.layout.padMax, t.layout.padMin)}rem)`;
   const yuklenen = t.customFonts ?? [];
+  const tipi = typeCss(t);
+  /* WARNING: THE PHONE BLOCK COMES AFTER THE WEB ONE WITH THE SAME WEIGHT
+     (:root:root), so inside its media query it wins by order - both live in
+     this single <style>, where the order IS ours to decide (§5.243). */
+  const mobil = [
+    t.fonts.displayMobile ? `--font-display:${stackFor(t.fonts.displayMobile, yuklenen, d.fonts.display)};` : '',
+    t.fonts.bodyMobile ? `--font-body:${stackFor(t.fonts.bodyMobile, yuklenen, d.fonts.body)};` : '',
+    tipi.mobile,
+  ].join('');
   return [
     /* Faces first: a :root that names a family the browser has not been told
        about would render in the fallback for the first paint. */
@@ -311,6 +524,9 @@ export function themeCss(theme: Theme): string {
     /* The stylesheet owns WHICH transition runs (`data-anim`); this is only
        HOW LONG it takes, so one number covers every variant. */
     `--filter-ms:${t.motion!.filterMs}ms;`,
+    styleCss(t),
+    tipi.web,
     '}',
+    mobil ? `@media (max-width: ${MOBILE_MAX_PX}px){:root:root{${mobil}}}` : '',
   ].join('');
 }

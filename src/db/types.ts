@@ -159,9 +159,24 @@ export interface Project {
  */
 export interface Theme {
   colors: { bg: string; ink: string; muted: string; line: string; soft: string };
-  fonts: { display: string; body: string };
-  /** rem. `pad` becomes clamp(padMin, 4vw, padMax). */
-  layout: { padMin: number; padMax: number; navH: number };
+  /** `displayMobile`/`bodyMobile`: a different family on phones (≤700px). Empty =
+   *  the same as the web family (§5.243). */
+  fonts: { display: string; body: string; displayMobile?: string; bodyMobile?: string };
+  /** rem. `pad` becomes clamp(padMin, 4vw, padMax). logoH/logoHMobile are the nav
+   *  mark's height; secMin/secMax the section's vertical padding (phone / wide). */
+  layout: {
+    padMin: number; padMax: number; navH: number;
+    logoH?: number; logoHMobile?: number; secMin?: number; secMax?: number;
+  };
+  /**
+   * Letterforms of headings (h1-h4), the menu and body copy (§5.243). Case is a
+   * CATALOGUE KEY (upper | none | capitalize), never raw CSS; the rest are numbers.
+   */
+  text?: {
+    headingWeight: number; headingCase: string; headingTracking: number; headingLine: number;
+    navWeight: number; navCase: string; navTracking: number;
+    bodyLine: number;
+  };
   /**
    * How the page moves. `projectFilter` is a CATALOGUE KEY (db/theme.ts), never
    * CSS: it names one of a fixed set of transitions the stylesheet already
@@ -175,6 +190,12 @@ export interface Theme {
   };
   /** Fonts the editor uploaded. Validated in db/theme.ts before they reach CSS. */
   customFonts?: { key: string; label: string; path: string }[];
+  /**
+   * Text sizes in PIXELS, keyed by the role in db/theme.ts → TYPE_SCALE (§5.239).
+   * `max` is the web (wide screen) size, `min` the phone size. A fixed role
+   * carries `min` only when the editor gave it a phone size of its own (§5.243).
+   */
+  type?: Record<string, { min?: number; max: number }>;
 }
 
 export interface Asset {
