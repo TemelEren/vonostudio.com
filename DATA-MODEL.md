@@ -76,9 +76,18 @@ Bu şemayı `seed/` klasöründeki dosyalardan üreten betik:
   "mission": { "tr": "...", "en": "..." },
   "values":  [{ "title": {...}, "description": {...} }],
   "awards":  [{ "year": "2019", "name": {...}, "prize": {...} }],
-  "team":    [{ "name": "Ad Soyad", "role": {...}, "bio": {...} }]
+  "team":    [{ "name": "Ad Soyad", "role": {...}, "bio": {...} }],
+  "showAwards": true,                       // yoksa false: ödüller sayfada basılmaz
+  "showTeam": true,                         // yoksa false: ekip sayfada basılmaz
+  "awardsTitle": { "tr": "Ödüller", "en": "Awards" },   // boşsa başlıksız basılır
+  "teamTitle":   { "tr": "Ekibimiz", "en": "Our team" }
 }
 ```
+
+Hakkımızda bölümü fotoğrafı, ilk paragrafı ve sayaçları basar. Ödüller ve ekip
+yalnız `showAwards` / `showTeam` açıksa fotoğrafın altında çıkar. Bu iki alanın
+başlığı `strings.*` içinde değil, burada durur: yeni bir metin anahtarı, satırı
+olmayan canlı veritabanında sayfaya kendi adını basardı.
 
 ### `services`
 

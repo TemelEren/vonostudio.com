@@ -31,6 +31,14 @@ export interface About {
   values: { title: Localized; description: Localized }[];
   awards: { year: string; name: Localized; prize: Localized }[];
   team: { name: string; role: Localized; bio: Localized }[];
+  /* Awards and team are printed only when switched on in the panel (§5.302).
+     Absent = off: a row written before the switch existed keeps the page it had.
+     The headings live here, not in `strings.*`: a new strings key would print
+     its own name on a live database that has no row for it. */
+  showAwards?: boolean;
+  showTeam?: boolean;
+  awardsTitle?: Localized;
+  teamTitle?: Localized;
 }
 
 export interface Service {

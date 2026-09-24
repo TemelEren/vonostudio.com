@@ -19,8 +19,21 @@ const stats = loadSettings().stats.map((s) => ({ value: s.value, label: s.label[
 
    The rest is NOT deleted: it stays in the content database and in the panel,
    so it can come back or move to a page of its own. The panel says what is not
-   printed (§5.220). */
+   printed (§5.220).
+
+   WARNING: AWARDS AND TEAM COME BACK ONE SWITCH AT A TIME (editor, 2026-09-24:
+   "we added the team and the awards but cannot see them"). Each has its own
+   "show on site" switch in the panel; while it is off the section is exactly the
+   one above. A row with no text in this language is left out rather than printed
+   as an empty line - a missing translation is the panel's warning to give. */
 const lead = about.intro[locale][0] ?? '';
+
+const awards = about.showAwards
+  ? (about.awards ?? []).filter((a) => a && (a.name?.[locale] ?? '').trim())
+  : [];
+const team = about.showTeam ? (about.team ?? []).filter((m) => m && (m.name ?? '').trim()) : [];
+const awardsTitle = (about.awardsTitle?.[locale] ?? '').trim();
+const teamTitle = (about.teamTitle?.[locale] ?? '').trim();
 ---
 
 <section class="section" id="hakkimizda">
@@ -58,6 +71,43 @@ const lead = about.intro[locale][0] ?? '';
         }
       </div>
     </div>
+
+    {
+      (awards.length > 0 || team.length > 0) && (
+        <div class="about-more">
+          {awards.length > 0 && (
+            <div data-reveal>
+              {awardsTitle && <h3 class="more-title">{awardsTitle}</h3>}
+              <ol class="award-list">
+                {awards.map((a) => (
+                  <li>
+                    <span class="award-year">{a.year}</span>
+                    <span class="award-text">
+                      <span class="award-name">{a.name[locale]}</span>
+                      {a.prize?.[locale] && <span class="award-prize">{a.prize[locale]}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {team.length > 0 && (
+            <div data-reveal>
+              {teamTitle && <h3 class="more-title">{teamTitle}</h3>}
+              <ul class="team-list">
+                {team.map((m) => (
+                  <li>
+                    <p class="member-name">{m.name}</p>
+                    {m.role?.[locale] && <p class="member-role">{m.role[locale]}</p>}
+                    {m.bio?.[locale] && <p class="member-bio">{m.bio[locale]}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )
+    }
   </div>
 </section>
 
@@ -143,6 +193,79 @@ const lead = about.intro[locale][0] ?? '';
     text-transform: uppercase;
     color: var(--muted);
     margin-top: 0.4rem;
+  }
+
+  /* Awards and team (§5.302): one row under the photo and the text, two columns
+     that fall to one when narrow. Small type on purpose - these are the details
+     under the story, not a second story. */
+  .about-more {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: clamp(2rem, 5vw, 4.5rem);
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: clamp(1.75rem, 3vw, 2.5rem);
+    border-top: 1px solid var(--line);
+  }
+
+  .more-title {
+    font-size: var(--t-caption);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .award-list,
+  .team-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .award-list li {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .award-year {
+    font-family: var(--font-display);
+    font-weight: 500;
+  }
+
+  .award-text {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .award-prize,
+  .member-role {
+    font-size: var(--t-small);
+    color: var(--muted);
+  }
+
+  .team-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .member-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--t-item-sm);
+  }
+
+  .member-role {
+    margin-top: 0.2rem;
+  }
+
+  .member-bio {
+    font-size: var(--t-note);
+    line-height: 1.6;
+    margin-top: 0.6rem;
   }
 
   @media (max-width: 800px) {
