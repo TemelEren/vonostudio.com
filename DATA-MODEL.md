@@ -29,7 +29,8 @@ CREATE TABLE assets (
   mime    TEXT NOT NULL,      -- 'image/jpeg'
   bytes   BLOB NOT NULL,          -- videoda BOŞ (x'')
   updated INTEGER NOT NULL,       -- unix SANİYE; ETag ve Last-Modified bundan üretilir
-  file    TEXT                    -- videoda '<sha256>.mp4' (content-medya/ içinde), öteki dosyalarda NULL
+  file    TEXT,                   -- '<sha256>.<ext>' (content-medya/ içinde); eski satırlarda NULL
+  variants TEXT                   -- sıkıştırılmış görselin kopyaları (JSON, aşağıda); NULL = orijinal
 );
 ```
 
@@ -179,8 +180,30 @@ gönderir.
 - `mime` doğru olmalı; tarayıcı dosyayı buna göre yorumlar.
 - `updated` her yazışta güncellenmeli — ETag bundan üretilir, yoksa tarayıcılar
   eski görseli göstermeye devam eder.
-- Fotoğrafları veritabanına koymadan önce sıkıştırın (2000px genişlik yeterli);
-  büyük dosyalar hem veritabanını hem sayfa açılışını şişirir.
+- Fotoğraflar tam boy yüklenir; sıkıştırmayı panelin **Kalite (0–10)** seçimi
+  yapar (aşağıda). Elle sıkıştırmak gerekmez.
+
+### Görsel kalitesi ve sıkıştırılmış kopyalar (`variants`)
+
+Panelde her görselin bir kalite seviyesi vardır: **10 = orijinal**, 0–9 arası
+küçültülmüş ve sıkıştırılmış kopyalar. Seviye seçilince panel orijinali saklar ve
+AVIF + WebP + JPEG (saydam görselde PNG) kopyalarını `content-medya/`ye yazar:
+
+```jsonc
+{ "level": 6, "width": 2560, "height": 1440,
+  "original": { "file": "<sha256>.jpg", "mime": "image/jpeg", "size": 9943549, "width": 7952, "height": 4472 },
+  "outputs":  [ { "file": "<sha256>.avif", "mime": "image/avif", "size": 204000 },
+                { "file": "<sha256>.webp", "mime": "image/webp", "size": 399000 },
+                { "file": "<sha256>.jpg",  "mime": "image/jpeg", "size": 325000 } ] }
+```
+
+- Site her istekte **tarayıcının `Accept` başlığında açıkça saydığı** biçimler
+  arasından **en küçük dosyayı** gönderir (orijinal dâhil) ve `Vary: Accept`
+  ekler. Yalnız `*/*` gönderen bağlantı önizleyicileri JPEG/PNG alır.
+- Satırın kendi `file`/`mime` sütunları en küçük JPEG/PNG kopyasını gösterir;
+  `variants`ı bilmeyen eski bir site sürümü de sıkıştırılmış görseli sunar.
+- Kopyası diskte olmayan biçim atlanır, sıradaki en küçük gönderilir.
+- `variants` boşsa (NULL) satır eskisi gibi orijinali sunar.
 
 ### Videolar veritabanında durmaz
 
@@ -193,14 +216,15 @@ Video satırının `bytes` sütunu boştur; `file` sütunu, veritabanının yan�
   dosya yalnız istenen aralıkta okunur.
 - **Ad, içeriğin özetidir**: dosya asla yerinde değişmez, taslak ve yayın aynı
   dosyayı gösterir; yayınlamak videoyu değil 64 karakterlik adı kopyalar.
-- **Site yalnız `^[0-9a-f]{64}\.(mp4|webm)$` biçimindeki adı** klasörle birleştirir;
+- **Site yalnız `^[0-9a-f]{64}\.<izinli uzantı>$` biçimindeki adı** klasörle birleştirir;
   başka bir değer (`../../...`) hiçbir dosya sunmaz. Dosyası olmayan video 404 döner.
 - Klasör `CONTENT_MEDIA_DIR` ile değiştirilebilir; boşsa `CONTENT_DB`'nin yanındaki
   `content-medya/`dır. Panel de aynı klasöre yazar (`Site:MediaDir`) — iki taraf
   aynı klasörü görmelidir (Docker'da ikisi de veritabanının klasörünü bağlar).
-- Kullanılmayan video dosyası panel tarafından **yayın ve taslak atma sırasında**,
+- Kullanılmayan dosya panel tarafından **yayın ve taslak atma sırasında**,
   hiçbir veritabanı (yayın · taslak · yedek anlık kopyaları) onu göstermiyorsa ve
-  bir günden eskiyse silinir.
+  bir günden eskiyse silinir. `variants` içinde adı geçen dosyalar (orijinal ve
+  kopyalar) da "gösterilen" sayılır.
 
 ## Tutarlılık kuralları
 

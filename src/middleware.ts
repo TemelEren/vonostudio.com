@@ -1,7 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { defineMiddleware } from 'astro:middleware';
-import { loadAssetBytes, loadAssetMeta, loadAssetSlice, previewAllowed, withDatabase } from './db';
+import { imageAccept, loadAssetBytes, loadAssetMeta, loadAssetSlice, previewAllowed, withDatabase } from './db';
 
 /** Query parameter and cookie that hold the preview token. */
 const PREVIEW_PARAM = 'onizleme';
@@ -85,7 +85,10 @@ export const onRequest = defineMiddleware((context, next) => {
     } catch {
       /* not a file */
     }
-    const asset = path ? loadAssetMeta(path) : undefined;
+    /* A compressed picture (panel §5.305) is answered per browser: AVIF where
+       the Accept header names it, else WebP, else the JPEG/PNG - always the
+       smallest the browser accepts. */
+    const asset = path ? loadAssetMeta(path, imageAccept(context.request.headers.get('accept'))) : undefined;
     if (!asset) {
       const response = await next();
       /* WARNING: A PREVIEW IS NEVER CACHED AND NEVER INDEXED. It shows work that
@@ -99,7 +102,9 @@ export const onRequest = defineMiddleware((context, next) => {
       return response;
     }
 
-    const etag = `W/"${asset.updated.toString(36)}-${asset.size.toString(36)}"`;
+    /* The type is part of the tag: the AVIF and the JPEG of one picture must
+       never validate each other in a cache. */
+    const etag = `W/"${asset.updated.toString(36)}-${asset.size.toString(36)}${asset.negotiated ? '-' + asset.mime.slice(6) : ''}"`;
     const headers: Record<string, string> = {
       'Content-Type': asset.mime,
       'Cache-Control': preview ? 'no-store' : 'no-cache',
@@ -111,6 +116,9 @@ export const onRequest = defineMiddleware((context, next) => {
          upload into something executable and run it on this origin. */
       'X-Content-Type-Options': 'nosniff',
     };
+    /* WARNING: WITHOUT `Vary: Accept` A SHARED CACHE (a proxy, a CDN) would
+       hand the AVIF it stored for Chrome to a browser that cannot draw it. */
+    if (asset.negotiated) headers['Vary'] = 'Accept';
 
     /* `updated` is epoch SECONDS — what the editing panel writes
        (SiteContentService.SaveAsset). It was read as milliseconds and every

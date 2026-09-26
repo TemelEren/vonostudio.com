@@ -222,17 +222,98 @@ export interface AssetMeta {
   /** Bytes on disk. Needed for Content-Length and for range arithmetic. */
   size: number;
   updated: number;
-  /** Absolute path of a film stored outside the database; absent for the rest. */
+  /** Absolute path of a file stored outside the database; absent for the rest. */
   filePath?: string;
+  /** The answer depends on the request's Accept header (a compressed picture). */
+  negotiated?: boolean;
 }
 
-/* Databases seeded before films moved to disk have no `file` column. Asked once
-   per request: the panel adds the column the first time it writes a film, and
-   the site must keep serving pictures from a database it has not touched. */
-function hasFileColumn(db: DatabaseSync): boolean {
-  return read('assets-file-column', () =>
-    (db.prepare("SELECT count(*) AS n FROM pragma_table_info('assets') WHERE name = 'file'").get() as { n: number }).n > 0
+/** Which modern picture formats the requesting browser says it decodes. */
+export interface ImageAccept {
+  avif: boolean;
+  webp: boolean;
+}
+
+/**
+ * Reads the two flags out of an `Accept` header.
+ *
+ * WARNING: ONLY AN EXPLICIT TYPE COUNTS. Link-preview crawlers (WhatsApp,
+ * LinkedIn, Slack) send a bare wildcard and many of them cannot draw AVIF;
+ * treating the wildcard as "accepts everything" would give shared links an
+ * empty preview. They get the JPEG/PNG.
+ */
+export function imageAccept(header: string | null | undefined): ImageAccept {
+  const h = (header ?? '').toLowerCase();
+  return { avif: h.includes('image/avif'), webp: h.includes('image/webp') };
+}
+
+/** One stored copy of a picture, as the panel writes it into `assets.variants`. */
+interface StoredImageFile {
+  file: string;
+  mime: string;
+  size: number;
+}
+
+/* Types every browser and crawler decodes. */
+const UNIVERSAL = new Set(['image/jpeg', 'image/png', 'image/gif']);
+
+/**
+ * The copy to send: the SMALLEST one the browser accepts, the original included.
+ *
+ * WARNING: THE PANEL APPLIES THE SAME RULE to print "Sitede: 134 KB"
+ * (Vono.Web/Services/ImageVariants.cs → Pick). If this changes, that must too,
+ * or the library shows one number and visitors download another.
+ * WARNING: SMALLEST, NOT "NEWEST FORMAT". A copy that came out larger than the
+ * original is never sent - the original is then both better and smaller.
+ */
+export function pickVariant(candidates: StoredImageFile[], accept: ImageAccept): StoredImageFile | undefined {
+  return candidates
+    .filter(
+      (c) =>
+        UNIVERSAL.has(c.mime) || (accept.avif && c.mime === 'image/avif') || (accept.webp && c.mime === 'image/webp')
+    )
+    .sort((a, b) => a.size - b.size)[0];
+}
+
+/* Parses `assets.variants` (panel §5.305). A value that cannot be read is
+   ignored: the row's own `file` - a JPEG/PNG copy - is still served. */
+function parseVariants(raw: string | null | undefined): StoredImageFile[] | undefined {
+  if (!raw) return undefined;
+  try {
+    const v = JSON.parse(raw) as { original?: StoredImageFile; outputs?: StoredImageFile[] };
+    if (!v?.original || !Array.isArray(v.outputs)) return undefined;
+    return [v.original, ...v.outputs].filter(
+      (c) => typeof c?.file === 'string' && typeof c?.mime === 'string' && typeof c?.size === 'number'
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+/* Databases seeded before films moved to disk have no `file` column, and those
+   written before picture compression (panel §5.305) no `variants`. Asked once
+   per request: the panel adds each column the first time it needs it, and the
+   site must keep serving from a database it has not touched. */
+function hasColumn(db: DatabaseSync, column: 'file' | 'variants'): boolean {
+  return read(`assets-column:${column}`, () =>
+    (
+      db.prepare("SELECT count(*) AS n FROM pragma_table_info('assets') WHERE name = ?").get(column) as {
+        n: number;
+      }
+    ).n > 0
   );
+}
+
+/* Size on disk of a media-folder file, or undefined when the name is not a
+   media name or the file is gone. */
+function mediaFile(file: string): { filePath: string; size: number } | undefined {
+  if (!MEDIA_NAME.test(file)) return undefined;
+  const filePath = join(MEDIA_DIR, file);
+  try {
+    return { filePath, size: statSync(filePath).size };
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -248,25 +329,42 @@ function hasFileColumn(db: DatabaseSync): boolean {
  * film whose file is missing answers as not found — sending the row's empty
  * `bytes` would be a video that silently never plays.
  */
-export function loadAssetMeta(path: string): AssetMeta | undefined {
-  return read(`asset-meta:${path}`, (db) => {
-    const withFile = hasFileColumn(db);
+export function loadAssetMeta(
+  path: string,
+  accept: ImageAccept = { avif: false, webp: false }
+): AssetMeta | undefined {
+  return read(`asset-meta:${path}:${accept.avif ? 'a' : ''}${accept.webp ? 'w' : ''}`, (db) => {
+    const withFile = hasColumn(db, 'file');
+    const withVariants = withFile && hasColumn(db, 'variants');
     const row = db
       .prepare(
-        `SELECT path, mime, length(bytes) AS size, updated${withFile ? ', file' : ''} FROM assets WHERE path = ?`
+        `SELECT path, mime, length(bytes) AS size, updated${withFile ? ', file' : ''}${withVariants ? ', variants' : ''} FROM assets WHERE path = ?`
       )
-      .get(path) as (AssetMeta & { file?: string | null }) | undefined;
+      .get(path) as (AssetMeta & { file?: string | null; variants?: string | null }) | undefined;
     if (!row) return undefined;
-    const { file, ...meta } = row;
+    const { file, variants, ...meta } = row;
+
+    /* A COMPRESSED PICTURE (panel §5.305): the original plus AVIF/WebP/JPEG
+       copies, all in the media folder. A copy whose file is missing is skipped
+       rather than answered with a 404 - the next smallest one is sent. */
+    const candidates = parseVariants(variants);
+    if (candidates) {
+      const onDisk = candidates.flatMap((c) => {
+        const f = mediaFile(c.file);
+        return f ? [{ ...c, size: f.size, filePath: f.filePath }] : [];
+      });
+      const chosen = pickVariant(onDisk, accept) as (StoredImageFile & { filePath: string }) | undefined;
+      if (chosen) return { ...meta, mime: chosen.mime, size: chosen.size, filePath: chosen.filePath, negotiated: true };
+      console.warn(`[assets] ${path}: no compressed copy on disk in ${MEDIA_DIR}, serving the row's own file`);
+    }
+
     if (!file) return meta;
-    if (!MEDIA_NAME.test(file)) return undefined;
-    const filePath = join(MEDIA_DIR, file);
-    try {
-      return { ...meta, size: statSync(filePath).size, filePath };
-    } catch {
-      console.warn(`[assets] ${path}: film file missing in ${MEDIA_DIR} (${file})`);
+    const f = mediaFile(file);
+    if (!f) {
+      console.warn(`[assets] ${path}: file missing in ${MEDIA_DIR} (${file})`);
       return undefined;
     }
+    return { ...meta, ...f };
   });
 }
 

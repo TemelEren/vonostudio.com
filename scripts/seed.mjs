@@ -79,7 +79,10 @@ db.exec(`
     mime    TEXT NOT NULL,
     bytes   BLOB NOT NULL,
     updated INTEGER NOT NULL,
-    file    TEXT
+    file    TEXT,
+    -- Compressed copies of a picture (panel section 5.305): JSON naming the
+    -- original and its AVIF/WebP/JPEG copies in content-medya/. NULL = original.
+    variants TEXT
   );
 `);
 
