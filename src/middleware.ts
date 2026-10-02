@@ -2,6 +2,7 @@ import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { defineMiddleware } from 'astro:middleware';
 import { imageAccept, loadAssetBytes, loadAssetMeta, loadAssetSlice, previewAllowed, withDatabase } from './db';
+import { recordView } from './analytics/counter';
 
 /** Query parameter and cookie that hold the preview token. */
 const PREVIEW_PARAM = 'onizleme';
@@ -91,6 +92,19 @@ export const onRequest = defineMiddleware((context, next) => {
     const asset = path ? loadAssetMeta(path, imageAccept(context.request.headers.get('accept'))) : undefined;
     if (!asset) {
       const response = await next();
+      /* Visit counter (ERP §5.327): an HTML page answered with 200, not a preview. Cookieless —
+         see analytics/counter.ts; it does nothing when the ERP address/key are not set. */
+      if (!preview && context.request.method === 'GET' && response.status === 200
+          && (response.headers.get('content-type') ?? '').includes('text/html') && !path.startsWith('/api/')) {
+        const xff = (context.request.headers.get('x-forwarded-for') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+        let ip = xff.length ? xff[xff.length - 1] : '';
+        if (!ip) { try { ip = context.clientAddress; } catch { ip = ''; } }
+        recordView({
+          path, ip, ua: context.request.headers.get('user-agent') ?? '',
+          referer: context.request.headers.get('referer'),
+          host: (context.request.headers.get('x-forwarded-host') ?? context.request.headers.get('host') ?? '').split(',')[0].trim(),
+        });
+      }
       /* WARNING: A PREVIEW IS NEVER CACHED AND NEVER INDEXED. It shows work that
          has not been published; a proxy or a crawler holding on to it would put
          unfinished pages in front of the public. Base.astro adds the robots tag;

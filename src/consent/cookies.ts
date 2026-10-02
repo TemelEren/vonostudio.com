@@ -3,7 +3,9 @@
    from this list, and the consent script reads its keys.
 
    WARNING: THIS IS AN INVENTORY OF THE CODE, NOT COPY. It was taken by reading
-   the site (2026-09-13): no analytics, no advertising, fonts and videos served
+   the site (2026-09-13; re-checked 2026-10-02 when the cookieless server-side visit
+   counter was added — analytics/counter.ts: it sets NOTHING in the browser, so this
+   list did not change): no analytics script, no advertising, fonts and videos served
    from our own server. What touches the visitor's browser is exactly:
      - the consent choice itself (local storage, first party);
      - the preview session cookie - only for the editor looking at an
