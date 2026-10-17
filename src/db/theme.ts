@@ -140,6 +140,7 @@ export const INTRO_MS = { min: 1000, max: 8000, default: 2800 };
  */
 export const TYPE_SCALE: Record<string, { css: string; max: number; min?: number; vw?: number }> = {
   hero: { css: '--t-hero', min: 1.7, vw: 3.1, max: 2.75 },
+  heroMeta: { css: '--t-hero-meta', min: 0.95, vw: 1.35, max: 1.25 },
   section: { css: '--t-section', min: 1.45, vw: 2.3, max: 2.05 },
   display: { css: '--t-display', min: 1.15, vw: 1.85, max: 1.65 },
   item: { css: '--t-item', min: 1.05, vw: 1.55, max: 1.35 },

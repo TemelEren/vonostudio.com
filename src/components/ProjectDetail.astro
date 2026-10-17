@@ -17,18 +17,23 @@ const t = useTranslations(locale);
 const altUrl = projectPath(locale === 'tr' ? 'en' : 'tr', project.slug);
 
 /* THE HEADING CARRIES THE FACTS; THERE IS NO CREDITS STRIP (editor, 2026-09-12).
-   Modelled on the reference's own detail page, measured the same day:
-   `<h1>APONINE | Istanbul'25</h1>` - name, a bar, place and year, one line,
-   no legend of labelled fields. Here: "NAME | PLACE YEAR", and the category
-   underneath in a smaller voice ("Yarışma — 1. Ödül").
+   Modelled on the reference's own detail page: name, place and year, no legend
+   of labelled fields, and the category underneath in a smaller voice.
+
+   PLACE AND YEAR SIT UNDER THE NAME (editor, 2026-10-17: "Bilgi yazısının daha
+   ufak bir boyutta daha soluk bir renk ile proje adının hemen altında sola
+   dayalı şekilde yerleşmesini istiyorum"). It was "NAME | PLACE YEAR" on one
+   line at the headline's size, so the facts competed with the name. Now: the
+   name alone on the first line, the place and year on their own line in a
+   smaller (--t-hero-meta, panel-sizable) and muted voice, no bar.
 
    Read BY KEY off the meta list (db/projectMeta.ts): renaming "Yıl" to
    "Tarih" in the panel keeps working, deleting the row removes the value, and
    nothing invents it back. Area, status and any custom row stay in the data but
    are no longer printed on this page - the editor asked for the legend to go.
 
-   WARNING: NO VALUE, NO SEPARATOR. A project without place and year prints its
-   name alone; a stray "|" reads as a broken template. */
+   WARNING: NO VALUE, NO LINE. A project without place and year prints its name
+   alone; an empty second line would leave a gap under the heading. */
 const where = [metaText(project, 'location', locale), metaText(project, 'year', locale)]
   .filter(Boolean);
 const kicker = metaText(project, 'category', locale);
@@ -69,17 +74,14 @@ const seoKeywords = String(project.seoKeywords?.[locale] ?? '').replace(/\s+/g, 
         255px of the first screen to answer questions - dimensions, year,
         location - that are only asked after the work has been seen. */}
       <header data-reveal>
-        {/* One h1, as on the reference: place and year belong to the page's
-            headline for a search engine too. The bar is decoration and stays
-            out of the accessible name; the year is glued to the place with a
-            no-break space so it never wraps onto a line by itself. */}
+        {/* One h1: place and year belong to the page's headline for a search
+            engine too, so the second line stays INSIDE it (a block span, not a
+            second heading). The year is glued to the place with a no-break
+            space so it never wraps onto a line by itself. */}
         <h1>
           <span class="name">{title}</span>
           {where.length > 0 && (
-            <Fragment>
-              <span class="sep" aria-hidden="true">|</span>
-              <span class="where">{where.join('\u00a0')}</span>
-            </Fragment>
+            <span class="where">{where.join('\u00a0')}</span>
           )}
         </h1>
         {kicker && <p class="kicker">{kicker}</p>}
@@ -507,11 +509,21 @@ const seoKeywords = String(project.seoKeywords?.[locale] ?? '').replace(/\s+/g, 
     font-size: var(--t-hero);
   }
 
-  /* The bar gets air on both sides the way the reference's `&nbsp;|` does,
-     and a lighter weight so it separates rather than shouts. */
-  .sep {
-    margin-inline: 0.4em;
-    font-weight: 400;
+  /* The name on its own line, the facts under it (editor, 2026-10-17).
+     Smaller and muted: it qualifies the name, it does not compete with it.
+     Left-aligned like everything in the head; the heading's letter case
+     (panel: Görünüm → Yazı) is inherited, its weight is not. */
+  .name {
+    display: block;
+  }
+
+  .where {
+    display: block;
+    margin-top: 0.45rem;
+    font-size: var(--t-hero-meta);
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--muted);
   }
 
   /* Smaller and quieter than the headline: it qualifies the work, it does not

@@ -45,6 +45,10 @@
      heading is 2.75x the body (it was 3.9x). Change a step and re-measure the
      whole ladder - including that it still DESCENDS. */
   --t-hero: clamp(1.7rem, 3.1vw, 2.75rem);
+  /* The place and year line UNDER the project name (2026-10-17): smaller and
+     muted, it qualifies the name. Not a rung of the heading ladder - it lives
+     inside the h1 - but it must stay below --t-hero (the panel warns if not). */
+  --t-hero-meta: clamp(0.95rem, 1.35vw, 1.25rem);
   --t-section: clamp(1.45rem, 2.3vw, 2.05rem);
   --t-display: clamp(1.15rem, 1.85vw, 1.65rem);
   --t-item: clamp(1.05rem, 1.55vw, 1.35rem);
