@@ -1,0 +1,93 @@
+---
+/* The prose of a legal page - the cookie policy and the KVKK privacy notice.
+
+   The text is the editor's copy, plain text from a panel text box
+   (i18n/plainText.ts): a blank line starts a paragraph, a paragraph's first
+   line is its lead, mail and https addresses become links. Never HTML.
+
+   A line that starts with "• " or "N. " is a list item and gets a hanging
+   indent - the privacy notice lists purposes, legal bases and the nine rights
+   of KVKK m.11 that way. Nothing else changes meaning: the text reads the same
+   with or without the indent. */
+import { paragraphs, type Piece } from '../i18n/plainText';
+
+interface Props {
+  text: string;
+}
+const { text } = Astro.props;
+const blocks = paragraphs(text);
+/* An outside address opens in a new tab; a mail address does not need one. */
+const disari = (href: string) => href.startsWith('https://');
+const isItem = (line: Piece[]) => /^(•|\d{1,2}\.)\s/.test(line[0]?.text ?? '');
+---
+
+<div class="yazi">
+  {blocks.map((b) => (
+    <p>
+      {b.lead.length > 0 && (
+        <strong class="lead">
+          {b.lead.map((p) =>
+            p.href ? (
+              <a href={p.href} target={disari(p.href) ? '_blank' : undefined} rel={disari(p.href) ? 'noopener noreferrer' : undefined}>{p.text}</a>
+            ) : (
+              p.text
+            )
+          )}
+        </strong>
+      )}
+      {b.lines.map((line) => (
+        <span class:list={['satir', { madde: isItem(line) }]}>
+          {line.map((p) =>
+            p.href ? (
+              <a href={p.href} target={disari(p.href) ? '_blank' : undefined} rel={disari(p.href) ? 'noopener noreferrer' : undefined}>{p.text}</a>
+            ) : (
+              p.text
+            )
+          )}
+        </span>
+      ))}
+    </p>
+  ))}
+</div>
+
+<style>
+  .yazi {
+    max-width: 46rem;
+    display: grid;
+    gap: 1.2rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .yazi .lead,
+  .yazi .satir {
+    display: block;
+  }
+
+  .yazi .lead {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* Two prose lines in one paragraph are two sentences of their own: a little
+     air between them, less between list items. */
+  .yazi .satir + .satir {
+    margin-top: 0.6rem;
+  }
+
+  .yazi .madde + .madde {
+    margin-top: 0.2rem;
+  }
+
+  .yazi .madde {
+    padding-left: 1.4em;
+    text-indent: -1.4em;
+  }
+
+  .yazi a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    overflow-wrap: anywhere;
+  }
+</style>

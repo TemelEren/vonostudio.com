@@ -1,0 +1,31 @@
+---
+/* The KVKK privacy notice page body, shared by /kvkk and
+   /en/privacy-notice (ERP §5.349). The whole text is the editor's copy.
+
+   WARNING: NOT LEGAL ADVICE. Have the wording reviewed before relying on it. */
+import LegalProse from './LegalProse.astro';
+import { useTranslations, type Locale } from '../i18n/ui';
+import { privacyText } from '../legal/privacy';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const title = privacyText(locale, t, 'privacy.title');
+const body = privacyText(locale, t, 'privacy.body');
+---
+
+<section class="section politika">
+  <div class="container">
+    <h1>{title}</h1>
+    <LegalProse text={body} />
+  </div>
+</section>
+
+<style>
+  h1 {
+    font-size: var(--t-section);
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  }
+</style>

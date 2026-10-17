@@ -3,6 +3,7 @@ import { loadProjects, resolveProjectMedia } from '../db';
 import { localePath } from '../i18n/ui';
 import { projectPath } from '../seo/pages';
 import { POLICY_PATH } from '../consent/cookies';
+import { PRIVACY_PATH } from '../legal/privacy';
 
 const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
@@ -39,6 +40,7 @@ export const GET: APIRoute = ({ site }) => {
       images: imagesOf(project),
     })),
     { tr: localePath('tr', POLICY_PATH.tr), en: localePath('en', POLICY_PATH.en), priority: '0.2', images: [] },
+    { tr: localePath('tr', PRIVACY_PATH.tr), en: localePath('en', PRIVACY_PATH.en), priority: '0.2', images: [] },
   ];
 
   const entries = pages.flatMap(({ tr, en, priority, images }) =>

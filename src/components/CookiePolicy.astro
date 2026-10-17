@@ -11,7 +11,7 @@
    WARNING: NOT LEGAL ADVICE. The default wording is a careful draft written
    against the KVKK cookie guideline; have it reviewed before relying on it. */
 import { useTranslations, type Locale } from '../i18n/ui';
-import { paragraphs } from '../i18n/plainText';
+import LegalProse from './LegalProse.astro';
 import { COOKIES, CATEGORY_LABEL } from '../consent/cookies';
 
 interface Props {
@@ -30,9 +30,6 @@ const body = metin(
   'Bu sayfa, vonostudio.com sitesinde hangi çerezlerin ve benzeri teknolojilerin kullanıldığını açıklar. Veri sorumlusu VONO MİMARLIK TASARIM İNŞAAT’tır.\n\nÇerez nedir?\nÇerezler, ziyaret ettiğiniz sitenin tarayıcınıza kaydettiği küçük dosyalardır. Benzer şekilde yerel depolama da tarayıcınızda küçük bilgiler saklar.\n\nHangi çerezleri kullanıyoruz?\nSitemizde reklam, pazarlama ya da ziyaretçi takibi (analiz) çerezi kullanılmaz. Yalnızca sitenin çalışması için zorunlu olan kayıtlar ve sizin izninize bağlı olarak İletişim bölümündeki Google Haritalar kullanılır. Ayrıntılar aşağıdaki tablodadır.\n\nİzin ve tercihlerinizi değiştirme:\nHarita, siz izin verene kadar yüklenmez. Tercihinizi istediğiniz zaman sayfanın altındaki “Çerez tercihleri” bağlantısından değiştirebilir, izninizi geri alabilirsiniz. Daha önce yerleştirilmiş Google çerezlerini tarayıcınızın ayarlarından silebilirsiniz.\n\nÜçüncü taraflar:\nGoogle’ın çerezleri Google’ın kendi politikasına tabidir: https://policies.google.com/technologies/cookies\n\nBize ulaşın:\nKişisel verilerinizle ilgili sorularınız ve 6698 sayılı Kanun’un 11. maddesindeki haklarınız için info@vonostudio.com adresine yazabilirsiniz.',
   'This page explains which cookies and similar technologies are used on vonostudio.com. The data controller is VONO MİMARLIK TASARIM İNŞAAT.\n\nWhat is a cookie?\nCookies are small files a website stores in your browser. Local storage similarly keeps small pieces of information in your browser.\n\nWhich cookies do we use?\nThis site uses no advertising, marketing or visitor tracking (analytics) cookies. Only records strictly necessary for the site to work are used, and - with your permission - Google Maps in the contact section. The table below lists them.\n\nConsent and changing your choice:\nThe map does not load until you allow it. You can change your choice or withdraw your consent at any time from the “Cookie preferences” link at the bottom of the page. Google cookies already placed can be deleted in your browser settings.\n\nThird parties:\nGoogle’s cookies are governed by Google’s own policy: https://policies.google.com/technologies/cookies\n\nContact us:\nFor questions about your personal data and your rights under Article 11 of Law No. 6698, write to info@vonostudio.com.',
 );
-const blocks = paragraphs(body);
-/* An outside address opens in a new tab; a mail address does not need one. */
-const disari = (href: string) => href.startsWith('https://');
 
 const H = locale === 'tr'
   ? { name: 'Ad', provider: 'Sağlayıcı', type: 'Tür', purpose: 'Amaç', duration: 'Süre', more: 'Sağlayıcının açıklaması' }
@@ -45,34 +42,7 @@ const updated = locale === 'tr' ? 'Sitede kullanılan çerezler' : 'Cookies used
   <div class="container">
     <h1>{title}</h1>
 
-    <div class="yazi">
-      {blocks.map((b) => (
-        <p>
-          {b.lead.length > 0 && (
-            <strong class="lead">
-              {b.lead.map((p) =>
-                p.href ? (
-                  <a href={p.href} target={disari(p.href) ? '_blank' : undefined} rel={disari(p.href) ? 'noopener noreferrer' : undefined}>{p.text}</a>
-                ) : (
-                  p.text
-                )
-              )}
-            </strong>
-          )}
-          {b.lines.map((line) => (
-            <span class="satir">
-              {line.map((p) =>
-                p.href ? (
-                  <a href={p.href} target={disari(p.href) ? '_blank' : undefined} rel={disari(p.href) ? 'noopener noreferrer' : undefined}>{p.text}</a>
-                ) : (
-                  p.text
-                )
-              )}
-            </span>
-          ))}
-        </p>
-      ))}
-    </div>
+    <LegalProse text={body} />
 
     <h2 class="tablo-baslik">{updated}</h2>
     <div class="tablo-kap">
@@ -118,25 +88,6 @@ const updated = locale === 'tr' ? 'Sitede kullanılan çerezler' : 'Cookies used
     margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
   }
 
-  .yazi {
-    max-width: 46rem;
-    display: grid;
-    gap: 1.2rem;
-    color: var(--muted);
-    line-height: 1.7;
-  }
-
-  .yazi .lead,
-  .yazi .satir {
-    display: block;
-  }
-
-  .yazi .lead {
-    color: var(--ink);
-    font-weight: 600;
-  }
-
-  .yazi a,
   td a {
     color: var(--ink);
     text-decoration: underline;

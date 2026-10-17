@@ -18,6 +18,7 @@
  *  - the cookie notice, its two equal buttons, its settings link and the policy
  *    are the consent mechanism (KVKK cookie guideline, §5.226) - hiding one of
  *    them would leave a consent flow that cannot be completed or withdrawn;
+ *  - the KVKK privacy notice is the legal notice of KVKK m.10 (ERP §5.349);
  *  - the 404 page has nothing else to say;
  *  - the project.* labels are not printed at all, so a switch would do nothing
  *    and only suggest that it did.
@@ -38,6 +39,9 @@ export const LOCKED_STRINGS: readonly string[] = [
   'cookie.map.load',
   'cookie.policy.title',
   'cookie.policy.body',
+  'privacy.title',
+  'privacy.link',
+  'privacy.body',
   'notfound.title',
   'notfound.home',
   'project.year',

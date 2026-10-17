@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import PrivacyNotice from '../../components/PrivacyNotice.astro';
+import { useTranslations, localePath } from '../../i18n/ui';
+import { PRIVACY_PATH, privacyText } from '../../legal/privacy';
+
+const locale = 'en' as const;
+const t = useTranslations(locale);
+const baslik = privacyText(locale, t, 'privacy.title');
+---
+
+<Base
+  locale={locale}
+  title={`${baslik} | Vono Studio`}
+  description="How Vono Studio processes personal data, on what legal basis, and your rights under the Turkish data protection law (KVKK)."
+  altUrl={localePath('tr', PRIVACY_PATH.tr)}
+>
+  <PrivacyNotice locale={locale} />
+</Base>

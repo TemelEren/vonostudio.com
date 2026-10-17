@@ -1,6 +1,7 @@
 ---
 import { useTranslations, localePath, type Locale } from '../i18n/ui';
 import { POLICY_PATH } from '../consent/cookies';
+import { PRIVACY_PATH, privacyText } from '../legal/privacy';
 
 interface Props {
   locale: Locale;
@@ -16,12 +17,15 @@ const metin = (key: Parameters<typeof t>[0], tr: string, en: string) => {
    disappears once answered; this is the permanent way back to it, on every page. */
 const tercihler = metin('cookie.settings', 'Çerez tercihleri', 'Cookie preferences');
 const politika = metin('cookie.policy.title', 'Çerez Politikası', 'Cookie Policy');
+/* The KVKK privacy notice (ERP §5.349) sits next to the cookie policy, on every page. */
+const aydinlatma = privacyText(locale, t, 'privacy.link');
 ---
 
 <footer class="footer">
   <div class="container top">
     <span>© {year} Vono Studio{t('footer.rights') && ` — ${t('footer.rights')}`}</span>
     <span class="yasal">
+      <a href={localePath(locale, PRIVACY_PATH[locale])}>{aydinlatma}</a>
       <a href={localePath(locale, POLICY_PATH[locale])}>{politika}</a>
       <button type="button" data-consent-open>{tercihler}</button>
     </span>
