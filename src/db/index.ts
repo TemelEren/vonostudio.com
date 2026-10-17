@@ -16,6 +16,8 @@ export * from './projectCategories';
 export * from './sectionOrder';
 import { resolveCategories, type ProjectCategory } from './projectCategories';
 import { resolveSectionOrder, type SectionKey } from './sectionOrder';
+export * from './projectPageOrder';
+import { resolveProjectPageOrder, type ProjectBlock } from './projectPageOrder';
 export * from './theme';
 
 /** Path to the content database. Overridable so staging/live can differ. */
@@ -162,6 +164,11 @@ export const loadProjectCategories = (): ProjectCategory[] =>
    page in its shipped order rather than dropping a section (db/sectionOrder.ts). */
 export const loadSectionOrder = (): SectionKey[] =>
   resolveSectionOrder(optionalDocument<unknown>('sectionOrder'));
+
+/* Optional too, and it can only REORDER the blocks under a project's name
+   (db/projectPageOrder.ts): no row means name, info, text, pictures. */
+export const loadProjectPageOrder = (): ProjectBlock[] =>
+  resolveProjectPageOrder(optionalDocument<unknown>('projectPageOrder'));
 
 /* Optional: no row means every interface string is on (i18n/stringsOff.ts). */
 export const loadStringsOff = (): Set<string> =>
